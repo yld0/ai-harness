@@ -14,13 +14,26 @@ from ai.api.ws_connection_manager import (
     WSConnectionManager,
     WebSocketState,
     close_websocket,
-    receive_json_with_idle_timeout,
     schedule_post_response_hooks,
 )
 from ai.context import REQUEST_ID, bind_context_var
+from ai.config import config
 from ai.schemas.agent import AgentChatRequest, WsAgentRequest, WsClientMessageType
 
 logger = logging.getLogger(__name__)
+
+
+async def receive_json_with_idle_timeout(websocket: WebSocket, client_id: str, timeout: float) -> object:
+    """Receive one JSON frame, enforcing the configured websocket idle timeout."""
+    try:
+        return await asyncio.wait_for(
+            websocket.receive_json(),
+            timeout=config.WS_IDLE_TIMEOUT_SECONDS,
+        )
+    except asyncio.TimeoutError:
+        logger.info("websocket idle timeout (client_id=%s)", client_id)
+        await close_websocket(websocket, code=1001, reason="idle timeout")
+        raise
 
 
 async def handle_chat_turn(
@@ -28,7 +41,6 @@ async def handle_chat_turn(
     state: WebSocketState,
     runner: AgentRunner,
     chat_request: AgentChatRequest,
-    hook_runner,
 ) -> None:
     """Run one chat turn and send all progress/final frames for that turn."""
     with bind_context_var(REQUEST_ID, str(uuid.uuid4())):
@@ -57,12 +69,20 @@ async def handle_chat_turn(
         for event in progress.events:
             await websocket.send_json(event)
         await websocket.send_json(chat_response_event(turn.response.model_dump(by_alias=True, mode="json")))
-        if hook_runner is not None:
+
+        if hook_runner := getattr(websocket.app.state, "hook_runner", None):
             schedule_post_response_hooks(state, hook_runner, turn)
 
 
-async def websocket_endpoint(websocket: WebSocket, client_id: str, runner: AgentRunner) -> None:
-    """Run authenticated v3 chat turns over a long-lived WebSocket connection."""
+async def handle_agent_websocket(websocket: WebSocket, client_id: str, runner: AgentRunner) -> None:
+    """
+    Run authenticated chat turns over a long-lived WebSocket connection.
+
+    Args:
+        websocket: The WebSocket connection.
+        client_id: The client ID.
+        runner: The AgentRunner instance.
+    """
 
     state: WebSocketState | None = None
     await websocket.accept()
@@ -74,41 +94,14 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str, runner: Agent
             return
 
         while True:
-            try:
-                raw = await receive_json_with_idle_timeout(websocket)
-            except asyncio.TimeoutError:
-                logger.info("websocket idle timeout (client_id=%s)", client_id)
-                await close_websocket(websocket, code=1001, reason="idle timeout")
-                break
-
-            try:
-                request = WsAgentRequest.model_validate(raw)
-            except ValidationError:
-                await websocket.send_json(
-                    error_event(
-                        code="bad_envelope",
-                        message="Invalid request envelope.",
-                        retryable=False,
-                    )
-                )
-                continue
-
-            if request.type != WsClientMessageType.CHAT_REQUEST or not isinstance(request.data, AgentChatRequest):
-                await websocket.send_json(
-                    error_event(
-                        code="unsupported_message_type",
-                        message="Unsupported websocket message type.",
-                        retryable=False,
-                    )
-                )
-                continue
+            raw = await receive_json_with_idle_timeout(websocket, client_id, config.WS_IDLE_TIMEOUT_SECONDS)
+            request = WsAgentRequest.model_validate(raw)
 
             await handle_chat_turn(
                 websocket,
                 state,
                 runner,
                 request.data,
-                getattr(websocket.app.state, "hook_runner", None),
             )
     except WebSocketDisconnect:
         logger.info("client disconnected (client_id=%s)", client_id)

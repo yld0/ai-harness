@@ -6,6 +6,7 @@ import jwt
 import pytest
 
 import ai.agent.runner as _ai_runner
+import ai.api.ws_connection_manager as ws_connection_manager
 from ai.agent.loop import ProviderMessage, ProviderTurn
 
 
@@ -28,6 +29,20 @@ def _stub_provider(monkeypatch: pytest.MonkeyPatch) -> None:
         _ai_runner.AgentRunner,
         "_default_provider",
         staticmethod(lambda: StubProvider()),
+    )
+
+
+async def receive_json_with_idle_timeout_for_tests(websocket):
+    return await websocket.receive_json()
+
+
+@pytest.fixture(autouse=True)
+def patch_ws_auth_receive(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        ws_connection_manager,
+        "receive_json_with_idle_timeout",
+        receive_json_with_idle_timeout_for_tests,
+        raising=False,
     )
 
 

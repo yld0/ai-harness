@@ -12,7 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from ai.agent.runner import AgentRunner
 from ai.api import automation_routes, health_routes, routes
-from ai.api.main import websocket_endpoint
+from ai.api.main import handle_agent_websocket
 from ai.api.ws_connection_manager import WSConnectionManager
 from ai.middleware.request_id import RequestIDMiddleware
 from ai.config import config, log_config, telemetry_config
@@ -64,7 +64,7 @@ app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY)
 
 @app.websocket("/v3/ws/{client_id}")
 async def ws_route(websocket: WebSocket, client_id: str) -> None:
-    await websocket_endpoint(websocket, client_id, websocket.app.state.runner)
+    await handle_agent_websocket(websocket, client_id, websocket.app.state.runner)
 
 
 def run() -> None:

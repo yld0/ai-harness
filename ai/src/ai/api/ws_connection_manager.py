@@ -128,12 +128,7 @@ async def reject(websocket: WebSocket, message: str, *, code: int = 4401) -> Non
     await close_websocket(websocket, code=code)
 
 
-async def receive_json_with_idle_timeout(websocket: WebSocket) -> object:
-    """Receive one JSON frame, enforcing the configured websocket idle timeout."""
-    return await asyncio.wait_for(
-        websocket.receive_json(),
-        timeout=config.WS_IDLE_TIMEOUT_SECONDS,
-    )
+
 
 
 async def close_websocket(websocket: WebSocket, *, code: int = 1000, reason: str | None = None) -> None:

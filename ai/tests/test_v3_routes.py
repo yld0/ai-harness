@@ -20,7 +20,7 @@ def test_question_route_returns_agent_response(
     assert response.status_code == 200
     body = response.json()
     assert body["conversationID"] == "conversation-1"
-    assert body["response"]["text"].startswith("Stub response")
+    assert body["response"]["text"].startswith("[stub]")
     assert body["metadata"]["user_id"] == "user-1"
 
 

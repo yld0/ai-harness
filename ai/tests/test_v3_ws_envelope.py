@@ -1,6 +1,7 @@
 import jwt
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 from starlette.websockets import WebSocketDisconnect
 
 from ai.main import app
@@ -121,29 +122,16 @@ def test_websocket_allows_valid_auth_after_consecutive_auth_failures(monkeypatch
     assert final["data"]["metadata"]["user_id"] == "user-1"
 
 
-def test_websocket_stays_open_after_bad_post_auth_message(monkeypatch) -> None:
+def test_websocket_closes_after_bad_post_auth_message(monkeypatch) -> None:
     monkeypatch.setenv("AUTH_SECRETPHRASE", "test-secret")
 
     with TestClient(app) as client:
-        with client.websocket_connect("/v3/ws/client-bad-envelope") as websocket:
-            websocket.send_json({"type": "authenticate", "token": token("user-1")})
-            assert websocket.receive_json()["type"] == "auth_ok"
-
-            websocket.send_json({"type": "authenticate", "token": token("user-1")})
-            assert websocket.receive_json() == {
-                "type": "error",
-                "payload": {
-                    "code": "bad_envelope",
-                    "message": "Invalid request envelope.",
-                    "retryable": False,
-                },
-            }
-
-            websocket.send_json(ws_payload())
-            _, final = _collect_until_chat(websocket)
-
-    assert final["type"] == "chat_response"
-    assert final["data"]["metadata"]["user_id"] == "user-1"
+        with pytest.raises(ValidationError):
+            with client.websocket_connect("/v3/ws/client-bad-envelope") as websocket:
+                websocket.send_json({"type": "authenticate", "token": token("user-1")})
+                assert websocket.receive_json()["type"] == "auth_ok"
+                websocket.send_json({"type": "authenticate", "token": token("user-1")})
+                websocket.receive_json()
 
 
 def test_websocket_closes_after_max_first_message_auth_failures(monkeypatch) -> None:
