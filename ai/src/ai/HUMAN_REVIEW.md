@@ -1,0 +1,16 @@
+# A human review of all features / code
+
+
+## Features
+
+- [x] slash commands
+      - fallback via string
+      - slash command in request
+- [] hooks
+
+- [x] utils
+
+
+
+
+- a post hook for quotes from superinvestors 

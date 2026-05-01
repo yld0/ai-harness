@@ -1,0 +1,72 @@
+[project]
+name = "ai"
+version = "26.4.0"
+description = "AI harness for financial research agents"
+readme = "DESIGN.md"
+requires-python = ">=3.12"
+dependencies = [
+    "shared",
+    "fastapi>=0.115.11,<0.116.0",
+    "httpx>=0.28.1,<0.29.0",
+    "pyjwt>=2.10.1",
+    "pydantic[email]>=2.11.1,<3.0.0",
+    "pymongo>=4.13.2,<5.0.0",
+    "motor>=3.7.0,<4.0.0",
+    "uvicorn>=0.34.0,<0.35.0",
+    "google-genai>=1.73.1",
+    "pyyaml>=6.0.3",
+    "beautifulsoup4>=4.14.3",
+    "aiocache>=0.12.3",
+    "redisvl>=0.18.0",
+    "arq>=0.28.0",
+    "itsdangerous>=2.2.0",
+    "langfuse>=4.5.1",
+]
+
+[project.optional-dependencies]
+whatsapp = ["neonize; sys_platform == 'linux'"]
+discord = ["discord.py>=2.3.0"]
+mcp = ["mcp>=1.0.0"]
+
+[project.scripts]
+ai = "ai.cli.__main__:main"
+ai-chat = "ai.cli.chat:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ai"]
+
+[dependency-groups]
+dev = [
+    "black>=26.3.1",
+    "deepeval>=3.9.7",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+    "respx>=0.23.1",
+    "websockets>=16.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+asyncio_mode = "auto"
+markers = [
+    "slow: T2 slow offline tests (opt-in; exclude from default CI)",
+    "live: T3 live eval — requires secrets and AI_HARNESS_LIVE_EVAL=1",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:pydantic",
+    "ignore::DeprecationWarning:deepeval",
+    "ignore::PendingDeprecationWarning",
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+]
+
+[tool.black]
+line-length = 160
+target-version = ["py312"]
+
+
+[tool.uv.sources]
+shared = { git = "https://github.com/yld0/backend", branch = "master", subdirectory = "python/shared"  }

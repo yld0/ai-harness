@@ -1,0 +1,2 @@
+- how do para memory files work 
+- look through [https://clawhub.ai/skills?q=financial](https://clawhub.ai/skills?q=financial)

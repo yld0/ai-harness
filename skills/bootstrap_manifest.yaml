@@ -1,0 +1,47 @@
+# Optional bootstrap / provenance for vendored or lazy-downloaded skills.
+# Dirs may be empty until submodules or copies are added; this manifest tracks intent.
+# Source hints follow Phase 5 plan; URLs are documentation only in this phase (no auto-install).
+
+version: 1
+entries:
+  - name: add-skill
+    source_hint: hermes
+    url: null
+  - name: patch-skill
+    source_hint: hermes
+    url: null
+  - name: plan
+    source_hint: NousResearch/hermes-agent
+    url: https://github.com/NousResearch/hermes-agent
+    path: skills/software-development/plan
+  - name: writing-plans
+    source_hint: NousResearch/hermes-agent
+    url: https://github.com/NousResearch/hermes-agent
+    path: skills/software-development/writing-plans
+  - name: para-memory-files
+    source_hint: paperclip
+    local: references-skills/para-memory-files
+  - name: arxiv
+    source_hint: hermes
+    url: null
+  - name: blogwatcher
+    source_hint: hermes
+    url: null
+  - name: llm-wiki
+    source_hint: hermes
+    url: null
+  - name: polymarket
+    source_hint: hermes
+    url: null
+  - name: valuation-thesis
+    source_hint: adapt from research-paper-writing
+    url: null
+  - name: note-taking
+    source_hint: hermes
+    url: null
+  - name: youtube-content
+    source_hint: hermes
+    url: null
+  - name: xitter
+    source_hint: hermes
+    url: null

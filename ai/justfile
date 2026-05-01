@@ -1,0 +1,26 @@
+set dotenv-filename := ".env"
+set dotenv-load
+
+alias check := tests
+alias test := tests
+
+
+_list:
+  @just --list --unsorted
+
+
+run:
+  @echo "[INFO] Running application..."
+  @uv run --env-file .env -- python main.py
+
+tests:
+	@echo "[INFO] Running tests..."
+	@uv run --env-file testing.env pytest tests/ -m "not slow and not live" -vvvs
+
+client:
+	@echo "[INFO] Running client..."
+	@uv run --env-file .env python example/client_ws.py --auth-first-message
+
+seed-spinner-verbs:
+	@echo "[INFO] Seeding spinner verbs..."
+	@uv run --env-file .env python src/ai/utils/seed_spinner_verbs.py

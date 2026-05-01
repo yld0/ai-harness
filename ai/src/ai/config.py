@@ -1,0 +1,178 @@
+from dataclasses import dataclass
+from typing import List, Optional
+
+from shared.envutil.config import item, load, register
+
+
+@register
+@dataclass
+class Config:
+    AUTH_SECRETPHRASE: str  # Dont want to default
+    SECRET_KEY: str  # Dont want to default
+    PORT: int = item(default=8005, description="Port to run the service on")
+    RELOAD: bool = item(default=False, description="Enable auto-reload")
+    GATEWAY_URL: str = item(default="http://66.135.26.112/api/graphql", description="Gateway URL")
+    WS_MAX_AUTH_FAILURES: int = item(default=5, description="Maximum consecutive websocket auth failures")
+    WS_IDLE_TIMEOUT_SECONDS: float = item(default=1800.0, description="WebSocket idle timeout in seconds")
+
+
+# NOTE: So can import scripts without having to pass in the config
+@register
+@dataclass
+class LoggingConfig:
+    LOG_LEVEL: str = "INFO"
+    LOG_COMPONENT: str = "ai"
+
+
+@register
+@dataclass
+class MongoConfig:
+    MONGO_URL: str = item(default="localhost", description="MongoDB URI")
+    MONGO_PORT: int = item(default=27017, description="MongoDB Port")
+    MONGO_DB = "yld0"
+    FMP_MONGO_DB = "fmp_v2"
+    AUTH_MONGO_DB = "auth"
+
+
+@register
+@dataclass
+class RedisConfig:
+    REDIS_HOST: str = item(default="127.0.0.1", description="Redis host")
+    REDIS_PORT: int = item(default=6379, description="Redis port")
+    REDIS_DB: str = item(default="0", description="Redis logical DB index")
+    REDIS_USERNAME: str = item(default="", description="Redis username (optional)")
+    REDIS_PASSWORD: str = item(default="", description="Redis password (optional)")
+
+    def url(self, db: Optional[str] = None) -> str:
+        auth = f"{self.REDIS_USERNAME}:{self.REDIS_PASSWORD}@" if self.REDIS_USERNAME and self.REDIS_PASSWORD else ""
+        db = db or self.REDIS_DB
+        return f"redis://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{db}"
+
+
+@register
+@dataclass
+class URLMetaConfig:
+    """urlmeta.org credentials for link preview metadata (optional)."""
+
+    URLMETA_API_KEY: str = item(default="", description="URL Meta API Basic token")
+
+
+@register
+@dataclass
+class TelemetryConfig:
+    """Sentry, PostHog, and Langfuse (see DESIGN.md — Telemetry)."""
+
+    SENTRY_DSN: str = item(default="", description="Sentry DSN; empty disables Sentry")
+    POSTHOG_API_KEY: str = item(default="", description="PostHog project API key")
+    POSTHOG_HOST: str = item(
+        default="https://app.posthog.com",
+        description="PostHog ingest host",
+    )
+    LANGFUSE_PUBLIC_KEY: str = item(default="", description="Langfuse public key")
+    LANGFUSE_SECRET_KEY: str = item(default="", description="Langfuse secret key")
+    LANGFUSE_HOST: str = item(
+        default="https://cloud.langfuse.com",
+        description="Langfuse API host",
+    )
+    TELEMETRY_REDACT_PROMPTS: str = item(
+        default="1",
+        description="When 1/true, redact large prompt/tool payloads in telemetry",
+    )
+    TELEMETRY_REDACT_TOOL_ARGS: str = item(
+        default="1",
+        description="When 1/true, redact tool argument values (names/keys kept)",
+    )
+    TELEMETRY_SAMPLE_RATE: str = item(
+        default="1.0",
+        description="Sentry traces sample rate 0.0–1.0",
+    )
+    COMPONENT: str = item(default="ai", description="Service name tag for Sentry")
+
+
+@register
+@dataclass
+class MCPConfig:
+    """MCP (Model Context Protocol) tool servers — optional.
+
+    When ``MCP_SERVERS`` is empty, MCP integration stays off and no heavy SDK
+    imports run. Value is parsed by :func:`ai.mcp.config.parse_mcp_servers_env`
+    (JSON object or CSV ``name:url`` shorthand).
+    """
+
+    MCP_SERVERS: str = item(
+        default="",
+        description=(
+            "MCP servers: JSON object of name → url or full objects, or CSV "
+            "name:url pairs. Example: fmp:http://localhost:8080/sse or "
+            '\'{"fmp": {"url": "http://localhost:8080/sse"}}\''
+        ),
+    )
+
+
+@register
+@dataclass
+class CouncilConfig:
+    """LLM Council configuration."""
+
+    COUNCIL_MODELS: str = item(
+        default="openai/gpt-4o,anthropic/claude-sonnet-4-5,google/gemini-2.0-flash-001",
+        description="Comma-separated OpenRouter model IDs for council panelists",
+    )
+    COUNCIL_CHAIRMAN_MODEL: str = item(
+        default="anthropic/claude-sonnet-4-5",
+        description="Model used as judge/chairman to synthesise the final answer",
+    )
+    COUNCIL_INCLUDE_RANKINGS: str = item(
+        default="1",
+        description="When 1/true, run Stage 2 peer ranking before synthesis",
+    )
+    COUNCIL_TIMEOUT_S: float = item(
+        default=120.0,
+        description="Per-model HTTP timeout for council queries (seconds)",
+    )
+
+
+@register
+@dataclass
+class AgentConfig:
+    """AgentRunner environment configuration."""
+
+    DEV_ECHO_MODE: bool = item(
+        default=False,
+        description="Set to True for offline stub responses",
+    )
+    GENAI_API_KEY: str = item(default="", description="Gemini API key")
+    GOOGLE_API_KEY: str = item(default="", description="Google API key (alternative to GENAI_API_KEY)")
+    OPENROUTER_API_KEY: str = item(default="", description="OpenRouter API key")
+    MEMORY_ROOT: str = item(default="./memory", description="Path to the PARA memory root directory")
+    AI_READ_TOOL_NAME: str = item(default="read_file", description="Override the read tool name used in skills prompts")
+    AI_SKILLS_INDEX_MAX_CHARS: int = item(
+        default=30_000,
+        description="Override max chars for skills index prompt",
+    )
+    AI_FALLBACK_MODELS: List[str] = item(
+        default_factory=list,
+        description="Comma-separated fallback model IDs for the provider router (envutil list)",
+    )
+    EMBEDDING_MODEL: str = item(
+        default="perplexity/pplx-embed-v1-0.6b",
+        description="OpenRouter embedding model ID",
+    )
+    SPINNER_VERBS_COLLECTION: str = item(
+        default="spinnerverbs",
+        description="MongoDB collection for spinner verb embeddings",
+    )
+
+
+mongo_config = load(MongoConfig)
+redis_config = load(RedisConfig)
+urlmeta_config = load(URLMetaConfig)
+telemetry_config = load(TelemetryConfig)
+mcp_config = load(MCPConfig)
+council_config = load(CouncilConfig)
+log_config = load(LoggingConfig)
+agent_config = load(AgentConfig)
+agent_config.AI_FALLBACK_MODELS = (
+    ["deepseek/deepseek-v4-flash", "anthropic/claude-sonnet-4.6"] if not agent_config.AI_FALLBACK_MODELS else agent_config.AI_FALLBACK_MODELS
+)
+config = load(Config)
