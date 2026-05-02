@@ -43,9 +43,7 @@ def init_langfuse(
     if not public or not secret:
         _langfuse_client = None
         return
-    host = (
-        (telemetry_config.LANGFUSE_HOST if telemetry_config else "") or os.getenv("LANGFUSE_HOST", "") or "https://cloud.langfuse.com"
-    ).strip()
+    host = ((telemetry_config.LANGFUSE_HOST if telemetry_config else "") or os.getenv("LANGFUSE_HOST", "") or "https://cloud.langfuse.com").strip()
     cls = (factory or _default_langfuse_class)()
     _langfuse_client = cls(public_key=public, secret_key=secret, host=host)
 

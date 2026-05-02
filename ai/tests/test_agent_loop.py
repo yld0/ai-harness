@@ -80,7 +80,7 @@ def test_loop_stops_at_max_iterations() -> None:
 
 
 def test_spinner_verbs_list_nonempty() -> None:
-    """ ``SPINNER_VERBS`` contains a healthy number of entries. """
+    """``SPINNER_VERBS`` contains a healthy number of entries."""
     assert len(SPINNER_VERBS) >= 20
 
 

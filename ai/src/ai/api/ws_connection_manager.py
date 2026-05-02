@@ -22,7 +22,7 @@ from ai.api.auth import (
 from ai.api.send import auth_ok_message
 from ai.clients.user import UserClient
 from ai.config import config
-from ai.hooks.base import HookContext, build_hook_context
+from ai.hooks.types import HookContext
 from ai.hooks.runner import HookRunner
 from ai.schemas.agent import WsAuthRequest
 
@@ -43,8 +43,8 @@ class WebSocketState:
 
 
 async def receive_json_with_idle_timeout(websocket: WebSocket, client_id: str, timeout: Optional[float] = None) -> object:
-    """ Receive one JSON frame, enforcing the configured websocket idle timeout.
-    
+    """Receive one JSON frame, enforcing the configured websocket idle timeout.
+
     Args:
         websocket: The WebSocket connection.
         client_id: The client ID.
@@ -62,7 +62,7 @@ async def receive_json_with_idle_timeout(websocket: WebSocket, client_id: str, t
 
 
 class WSConnectionManager:
-    """ Lifecycle for per-connection ``WebSocketState`` (auth + best-effort metadata). """
+    """Lifecycle for per-connection ``WebSocketState`` (auth + best-effort metadata)."""
 
     async def authenticate(self, websocket: WebSocket, client_id: str) -> WebSocketState | None:
         """Authenticate via ``Authorization`` header or retryable first-message auth."""
@@ -108,7 +108,7 @@ class WSConnectionManager:
         return None
 
     async def disconnect(self, state: WebSocketState) -> None:
-        """ Drain per-connection background work and cancel best-effort metadata lookup. """
+        """Drain per-connection background work and cancel best-effort metadata lookup."""
         await drain_hook_tasks(state)
 
         task = state._resolve_task
@@ -121,7 +121,7 @@ class WSConnectionManager:
             pass
 
     def _attach(self, client_id: str, user: AuthenticatedUser, bearer_token: str) -> WebSocketState:
-        """ Create a ``WebSocketState`` and kick off the best-effort ``resolve_superuser`` lookup. """
+        """Create a ``WebSocketState`` and kick off the best-effort ``resolve_superuser`` lookup."""
         state = WebSocketState(
             client_id=client_id,
             user_id=user.user_id,
@@ -132,7 +132,7 @@ class WSConnectionManager:
 
 
 async def resolve_superuser(state: WebSocketState) -> None:
-    """ Best-effort lookup of ``isSuperuser``; transient failures leave the default ``False``. """
+    """Best-effort lookup of ``isSuperuser``; transient failures leave the default ``False``."""
     try:
         data = await UserClient().fetch_me(state.bearer_token)
     except (httpx.HTTPStatusError, httpx.RequestError, RuntimeError):
@@ -142,7 +142,7 @@ async def resolve_superuser(state: WebSocketState) -> None:
 
 
 async def reject(websocket: WebSocket, message: str, *, code: int = 4401) -> None:
-    """ Send a ``websocket_auth_error`` frame and close with ``code`` (default 4401). """
+    """Send a ``websocket_auth_error`` frame and close with ``code`` (default 4401)."""
     await websocket.send_json(websocket_auth_error(message))
     await close_websocket(websocket, code=code)
 
@@ -150,7 +150,7 @@ async def reject(websocket: WebSocket, message: str, *, code: int = 4401) -> Non
 async def close_websocket(websocket: WebSocket, *, code: int = 1000, reason: str | None = None) -> None:
     """
     Close a websocket, ignoring duplicate-close races during cleanup.
-    
+
     Args:
         websocket: The WebSocket connection.
         code: The close code.
@@ -168,7 +168,7 @@ async def close_websocket(websocket: WebSocket, *, code: int = 1000, reason: str
 async def drain_hook_tasks(state: WebSocketState) -> None:
     """
     Give post-response hook tasks a short graceful drain before cancellation.
-    
+
     Args:
         state: The WebSocket state.
     """
@@ -191,5 +191,3 @@ async def drain_hook_tasks(state: WebSocketState) -> None:
     for task in pending:
         task.cancel()
     await asyncio.gather(*pending, return_exceptions=True)
-
-

@@ -104,9 +104,7 @@ class UIChartType(str, Enum):
 
 class ChatChartComponent(CamelBaseModel):
     type: UIComponent = UIComponent.CHART
-    source: Optional[str] = Field(
-        description="Optional source of the data for the chart. This could be a link to a source or a description of the source."
-    )
+    source: Optional[str] = Field(description="Optional source of the data for the chart. This could be a link to a source or a description of the source.")
     title: str
     chart_type: UIChartType
     data: ChartData
@@ -252,9 +250,7 @@ class FileComponent(CamelBaseModel):
 ChatComponent = Union[ChatTableComponent, ChatChartComponent, FileComponent]
 ExtraChatComponent = Union[ChatComponent, ChatProviderTabsComponent, ChatProviderRankingsComponent, ChatAggregateRankingsComponent]
 
-SourceComponent = Union[
-    DocumentSourceComponent, WebsiteSourceComponent, NewsSourceComponent, TwitterSourceComponent, YoutubeSourceComponent
-]
+SourceComponent = Union[DocumentSourceComponent, WebsiteSourceComponent, NewsSourceComponent, TwitterSourceComponent, YoutubeSourceComponent]
 
 
 class CouncilStageItem(CamelBaseModel):
@@ -275,7 +271,7 @@ class CouncilResponse(CamelBaseModel):
 
 
 class CouncilRunResult(CamelBaseModel):
-    """ Version-agnostic council run output. Produced by ai.council.runner.run_council. """
+    """Version-agnostic council run output. Produced by ai.council.runner.run_council."""
 
     version: Literal["v1", "v2"]
     stage1: List[CouncilStageItem] = Field(default_factory=list)
@@ -804,14 +800,7 @@ class ConversationIdUpdate(CamelBaseModel):
 
 class WsAgentChatResponse(CamelBaseModel):
     type: WsServerMessageType = WsServerMessageType.CHAT_RESPONSE
-    data: (
-        AgentChatResponse
-        | PartialAgentChatResponse
-        | TaskUpdateMessage
-        | ChainOfThoughtUpdate
-        | BackgroundTaskUpdate
-        | ConversationIdUpdate
-    )
+    data: AgentChatResponse | PartialAgentChatResponse | TaskUpdateMessage | ChainOfThoughtUpdate | BackgroundTaskUpdate | ConversationIdUpdate
 
 
 # ================================================
@@ -859,9 +848,7 @@ class WsAgentRequest(CamelBaseModel):
     """Client→server WebSocket message envelope (post-auth). Dispatched by type."""
 
     type: WsClientMessageType = Field(description="Message type: chat_request or background_task.")
-    data: Union[AgentChatRequest, BackgroundTaskRequest] = Field(
-        description="Payload; shape depends on type (AgentChatRequest vs BackgroundTaskRequest)."
-    )
+    data: Union[AgentChatRequest, BackgroundTaskRequest] = Field(description="Payload; shape depends on type (AgentChatRequest vs BackgroundTaskRequest).")
 
     @model_validator(mode="before")
     @classmethod

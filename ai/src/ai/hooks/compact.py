@@ -6,7 +6,8 @@ import logging
 from typing import Callable, Sequence
 
 from ai.agent.loop import ProviderMessage
-from ai.hooks.base import Hook, HookConfig, HookContext, HookResult
+from ai.hooks.types import Hook, HookContext, HookResult
+from ai.config import HookConfig
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class CompactHook:
         try:
             out = compact_messages(
                 list(ctx.messages),
-                soft_threshold=cfg.compact_soft_chars,
+                soft_threshold=cfg.AI_COMPACT_SOFT_CHARS,
             )
         except Exception as exc:  # noqa: BLE001
             logger.exception("compact hook")

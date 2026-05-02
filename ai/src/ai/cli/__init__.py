@@ -1,1 +1,1 @@
-""" Standalone CLI entry points. """
+"""Standalone CLI entry points."""

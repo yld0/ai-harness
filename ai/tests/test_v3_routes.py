@@ -138,7 +138,7 @@ def test_run_agent_replays_cached_result_for_same_run_id(
     original_run = AgentRunner.run
 
     async def counting_run(self, body, *, user_id, bearer_token=None, **kwargs):  # type: ignore[override]
-        """ Counting wrapper around AgentRunner.run for test assertion. """
+        """Counting wrapper around AgentRunner.run for test assertion."""
         run_calls.append(body.automation_run_id)
         return await original_run(self, body, user_id=user_id, bearer_token=bearer_token, **kwargs)
 
@@ -168,7 +168,7 @@ def test_run_agent_forwards_bearer_token_to_runner(
     original_run = AgentRunner.run
 
     async def capturing_run(self, body, *, user_id, bearer_token=None, **kwargs):  # type: ignore[override]
-        """ Capturing wrapper around AgentRunner.run for test assertion. """
+        """Capturing wrapper around AgentRunner.run for test assertion."""
         captured.append(bearer_token)
         return await original_run(self, body, user_id=user_id, bearer_token=bearer_token, **kwargs)
 

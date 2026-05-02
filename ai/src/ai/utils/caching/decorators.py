@@ -83,7 +83,7 @@ def semantic_cached(
 ) -> Callable[[F], F]:
     """
     A decorator that provides semantic caching using RedisVL.
-    
+
     Args:
         name: The name/index prefix for the cache in Redis.
             If not provided, uses the decorated function's name.
@@ -94,10 +94,10 @@ def semantic_cached(
             If not provided, constructs from redis_config.
         cache_key_func: Optional function that receives function arguments (*args, **kwargs)
             and returns the cache key.
-    
+
     Returns:
         Decorator function that wraps the target function with semantic caching.
-    
+
     Raises:
         ValueError: If threshold is not between 0.0 and 1.0.
     """

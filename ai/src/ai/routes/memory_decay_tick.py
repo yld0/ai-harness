@@ -66,10 +66,7 @@ async def run(ctx: RouteContext) -> RouteResult:
             facts_transitioned += transitions
             logger.debug("decay_tick: updated %s (%d transitions)", items_path, transitions)
 
-    summary = (
-        f"Decay tick complete: {files_checked} files checked, "
-        f"{files_updated} updated, {facts_transitioned} facts transitioned to historical."
-    )
+    summary = f"Decay tick complete: {files_checked} files checked, " f"{files_updated} updated, {facts_transitioned} facts transitioned to historical."
     logger.info(summary)
     return RouteResult(
         text=summary,

@@ -36,7 +36,7 @@ from ai.schemas.agent import AgentChatRequest, ChatContext, ChatRequest
 
 
 class CliProgressSink:
-    """ Writes CoT / task-progress events to stderr so stdout stays clean. """
+    """Writes CoT / task-progress events to stderr so stdout stays clean."""
 
     def __init__(self, verbose: bool = False) -> None:
         self._verbose = verbose
@@ -104,7 +104,7 @@ def _build_request(
 
 
 def _apply_config_overrides(args: argparse.Namespace) -> None:
-    """ Apply parsed CLI args over env-backed defaults. """
+    """Apply parsed CLI args over env-backed defaults."""
     cli_config.CLI_USER_ID = getattr(args, "user_id", None) or cli_config.CLI_USER_ID
     cli_config.CLI_BEARER_TOKEN = getattr(args, "api_key", None) or cli_config.CLI_BEARER_TOKEN
     cli_config.CLI_MEMORY_ROOT = getattr(args, "memory_root", None) or cli_config.CLI_MEMORY_ROOT

@@ -16,7 +16,7 @@ import logging
 import threading
 from typing import Any
 
-from ai.hooks.base import Hook, HookContext, HookResult
+from ai.hooks.types import Hook, HookContext, HookResult
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ class SkillReviewHook:
     def _effective_threshold(self, ctx: HookContext) -> int:
         if self._threshold_override is not None:
             return self._threshold_override
-        return ctx.config.skill_review_threshold
+        return ctx.config.AI_SKILL_REVIEW_THRESHOLD
 
     def run(self, ctx: HookContext) -> HookResult:
         threshold = self._effective_threshold(ctx)

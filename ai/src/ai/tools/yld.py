@@ -12,8 +12,7 @@ from ai.tools.graphql import GraphqlClient
 class YldGraphqlQuery(Tool):
     name: ClassVar[str] = "yld_graphql"
     description: ClassVar[str] = (
-        "Run a read GraphQL document against the YLD supergraph. "
-        "Use for queries only in this phase; mutations go through specific tools such as user_cli."
+        "Run a read GraphQL document against the YLD supergraph. " "Use for queries only in this phase; mutations go through specific tools such as user_cli."
     )
     file_component_risk: ClassVar[bool] = False
 

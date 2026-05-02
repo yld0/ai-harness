@@ -100,11 +100,7 @@ async def run(ctx: RouteContext) -> RouteResult:
                 entities_failed += 1
                 logger.warning("heartbeat-extract: %s/%s failed: %s", kind, entity_id, exc)
 
-    summary = (
-        f"Heartbeat extract complete: {entities_processed} entities processed"
-        + (f", {entities_failed} failed" if entities_failed else "")
-        + "."
-    )
+    summary = f"Heartbeat extract complete: {entities_processed} entities processed" + (f", {entities_failed} failed" if entities_failed else "") + "."
     return RouteResult(
         text=summary,
         metadata={

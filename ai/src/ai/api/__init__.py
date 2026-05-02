@@ -1,1 +1,1 @@
-""" HTTP and WebSocket API surface. """
+"""HTTP and WebSocket API surface."""

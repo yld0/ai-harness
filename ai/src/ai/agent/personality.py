@@ -3,8 +3,7 @@
 from dataclasses import dataclass
 
 DEFAULT_AGENT_IDENTITY = (
-    "You are yld0 AI Harness, a financial research assistant. Be accurate, "
-    "explicit about uncertainty, and optimize for useful investor-grade analysis."
+    "You are yld0 AI Harness, a financial research assistant. Be accurate, " "explicit about uncertainty, and optimize for useful investor-grade analysis."
 )
 
 
@@ -26,8 +25,7 @@ PERSONALITIES: dict[str, Personality] = {
     "criticise": Personality(
         name="criticise",
         prompt=(
-            "Criticise personality: invert the thesis, search for disconfirming evidence, "
-            "and name the strongest counterargument before offering fixes."
+            "Criticise personality: invert the thesis, search for disconfirming evidence, " "and name the strongest counterargument before offering fixes."
         ),
     ),
 }

@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import asyncio
 
+from dataclasses import replace
+
 from ai.agent.loop import ProviderMessage
-from ai.hooks.base import HookConfig, HookContext, HookResult, build_hook_context
+from ai.config import hook_config
+from ai.hooks.base import HookContext, HookResult, build_hook_context
 from ai.hooks.compact import compact_messages
 from ai.hooks.collapse import collapse_messages
 from ai.hooks.runner import HookRunner
@@ -53,7 +56,7 @@ def test_hook_exception_does_not_abort_sequence() -> None:
         def run(self, ctx: HookContext) -> HookResult:
             return HookResult(name="fine", ok=True)
 
-    cfg = HookConfig(hooks_enabled=["boom", "fine"], post_hook_timeout_s=5.0)
+    cfg = replace(hook_config, AI_HOOKS_ENABLED=["boom", "fine"], AI_POST_HOOK_TIMEOUT_S=5.0)
     runner = HookRunner(config=cfg, hooks={"boom": Boom(), "fine": Fine()})
     ctx = build_hook_context(
         user_id="u1",

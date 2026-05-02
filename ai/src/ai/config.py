@@ -119,7 +119,7 @@ class HealthConfig:
         description="When True, attempt lightweight HTTP reachability checks against configured dependency URLs",
     )
     GRAPHQL_HEALTH_URL: str = item(
-        default="http://66.135.26.112/api/graphql", # TODO: Expose actual health endpoint
+        default="http://66.135.26.112/api/graphql",  # TODO: Expose actual health endpoint
         description="URL for GraphQL service health probe",
     )
     GEMINI_HEALTH_URL: str = item(
@@ -175,6 +175,47 @@ class CouncilConfig:
 
 @register
 @dataclass
+class HookConfig:
+    """Per-process hook flags and thresholds for post-response processing."""
+
+    AI_HOOKS_ENABLED: List[str] = item(default_factory=list, description="Enabled hooks (CSV of hook names)")
+    AI_COMPACT_SOFT_CHARS: int = item(default=12_000, description="Soft compaction threshold in chars")
+    AI_COLLAPSE_HARD_CHARS: int = item(default=48_000, description="Hard collapse threshold in chars")
+    AI_COLLAPSE_KEEP_PAIRS: int = item(default=3, description="Recent user/assistant pairs to keep after collapse")
+    AI_EXTRACT_MEMORIES_EVERY_N: int = item(
+        default=5,
+        description="Append PARA daily note / light extract every N turns (0 disables extract_memories hook)",
+    )
+    AI_AUTO_DREAM_ENABLED: bool = item(
+        default=False,
+        description="When True, gated periodic memory consolidation (auto_dream hook) may run after other gates pass",
+    )
+    AI_AUTO_DREAM_MIN_HOURS: int = item(
+        default=24,
+        description="Minimum hours since last consolidation (lock mtime) before auto-dream may run",
+    )
+    AI_AUTO_DREAM_MIN_SESSIONS: int = item(
+        default=5,
+        description="Minimum distinct daily-note files touched since last consolidation (excluding today) to run dream",
+    )
+    AI_AUTO_DREAM_SCAN_THROTTLE_S: int = item(
+        default=600,
+        description="Per-user throttle between session scans when time gate passes (seconds)",
+    )
+    AI_AUTO_DREAM_RECENT_DAILY_NOTES: int = item(
+        default=7,
+        description="Number of recent calendar daily notes to include in dream prompt",
+    )
+    AI_AUTO_DREAM_MODEL: str = item(
+        default="",
+        description="OpenRouter or Gemini model id for dream consolidation; empty uses default low-effort router model",
+    )
+    AI_POST_HOOK_TIMEOUT_S: float = item(default=30.0, description="Total post-hook budget in seconds")
+    AI_SKILL_REVIEW_THRESHOLD: int = item(default=10, description="Tool-call count that triggers a background skill review")
+
+
+@register
+@dataclass
 class CliConfig:
     """Standalone CLI environment configuration."""
 
@@ -216,6 +257,7 @@ class AgentConfig:
     )
 
 
+hook_config = load(HookConfig)
 mongo_config = load(MongoConfig)
 redis_config = load(RedisConfig)
 urlmeta_config = load(URLMetaConfig)

@@ -55,9 +55,7 @@ def test_financebench_data_available():
     data_dir = data_dir_from_env()
     assert data_dir is not None
     questions_file = data_dir / "financebench_open_source.jsonl"
-    assert questions_file.is_file(), (
-        f"Questions file not found: {questions_file}\n" "Acquire FinanceBench data: see evals/financebench/README.md"
-    )
+    assert questions_file.is_file(), f"Questions file not found: {questions_file}\n" "Acquire FinanceBench data: see evals/financebench/README.md"
 
 
 # ─── loader integration ───────────────────────────────────────────────────────
@@ -140,9 +138,7 @@ def test_financebench_aggregate_has_buckets():
     scored = [score_row(r, r.expected_answer) for r in eval_rows]
     summary = aggregate_scores(scored)
 
-    assert summary["exact_match"] > 0.8, (
-        f"Expected high EM when predicting gold; got {summary['exact_match']}. " "Check normalize_answer for regressions."
-    )
+    assert summary["exact_match"] > 0.8, f"Expected high EM when predicting gold; got {summary['exact_match']}. " "Check normalize_answer for regressions."
     for bucket_name, bucket in summary["by_question_type"].items():
         assert "n" in bucket
         assert "exact_match" in bucket

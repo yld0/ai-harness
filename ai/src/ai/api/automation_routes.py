@@ -1,4 +1,4 @@
-""" Automation-facing v3 routes. """
+"""Automation-facing v3 routes."""
 
 from typing import Annotated, Any
 
@@ -18,13 +18,14 @@ replay_cache: aiocache.SimpleMemoryCache = aiocache.SimpleMemoryCache()
 
 
 class AutomationRunRequest(AgentChatRequest):
-    """ Automation-specific request envelope carrying idempotency IDs.
-    
+    """Automation-specific request envelope carrying idempotency IDs.
+
     Args:
         automation_id: The automation ID.
         automation_run_id: The automation run ID.
         target: The target.
     """
+
     automation_id: str = Field(
         validation_alias=AliasChoices("automationId", "automationID", "automation_id"),
         serialization_alias="automationId",
@@ -37,7 +38,7 @@ class AutomationRunRequest(AgentChatRequest):
 
 
 def get_runner(request: Request) -> AgentRunner:
-    """ Return the shared ``AgentRunner`` from application state. """
+    """Return the shared ``AgentRunner`` from application state."""
     return request.app.state.runner
 
 
@@ -48,8 +49,8 @@ async def run_agent(
     runner: Annotated[AgentRunner, Depends(get_runner)],
     authorization: Annotated[str | None, Header()] = None,
 ) -> dict[str, Any]:
-    """ Execute one automation turn, replaying the cached result for duplicate run IDs.
-    
+    """Execute one automation turn, replaying the cached result for duplicate run IDs.
+
     Args:
         body: The automation run request.
         user: The authenticated user.

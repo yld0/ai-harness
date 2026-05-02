@@ -1,4 +1,4 @@
-""" MongoDB vector search utilities. """
+"""MongoDB vector search utilities."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ async def ensure_vector_index(
     default_embedding_dimension: int = 384,
     index_name: str = "vector_index",
 ) -> None:
-    """ Create a MongoDB Atlas vector search index on the *embedding* field. """
+    """Create a MongoDB Atlas vector search index on the *embedding* field."""
 
     async def _create() -> None:
         search_index_model = SearchIndexModel(
@@ -50,7 +50,7 @@ async def vector_search(
     oversampling_factor: int = 10,
     extra_pipeline: list[dict[str, Any]] | None = None,
 ) -> list[tuple[dict[str, Any], float]]:
-    """ Run ``$vectorSearch`` and return ``(document, score)`` tuples. """
+    """Run ``$vectorSearch`` and return ``(document, score)`` tuples."""
 
     pipeline: list[dict[str, Any]] = [
         {

@@ -21,8 +21,7 @@ CHANNEL_HINTS: dict[Channel, str] = {
 }
 
 FILE_COMPONENT_GUIDANCE = (
-    "FileComponent guidance: when plan mode or a capable web UI needs editable artifacts, "
-    "return a FileComponent with title, mime, and content."
+    "FileComponent guidance: when plan mode or a capable web UI needs editable artifacts, " "return a FileComponent with title, mime, and content."
 )
 
 

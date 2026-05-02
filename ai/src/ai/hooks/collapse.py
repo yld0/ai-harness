@@ -6,7 +6,8 @@ import logging
 from typing import Sequence
 
 from ai.agent.loop import ProviderMessage
-from ai.hooks.base import Hook, HookConfig, HookContext, HookResult
+from ai.hooks.types import Hook, HookContext, HookResult
+from ai.config import HookConfig
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +49,8 @@ class CollapseHook:
         try:
             out = collapse_messages(
                 list(ctx.messages),
-                hard_threshold=cfg.collapse_hard_chars,
-                keep_recent_pairs=cfg.keep_recent_pairs,
+                hard_threshold=cfg.AI_COLLAPSE_HARD_CHARS,
+                keep_recent_pairs=cfg.AI_COLLAPSE_KEEP_PAIRS,
             )
         except Exception as exc:  # noqa: BLE001
             logger.exception("collapse hook")

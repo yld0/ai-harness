@@ -19,7 +19,7 @@ from ai.api.ws_connection_manager import (
 from ai.context import REQUEST_ID, bind_context_var
 from ai.config import config
 from ai.schemas.agent import AgentChatRequest, WsAgentRequest
-from ai.hooks.base import HookContext, build_hook_context
+from ai.hooks.types import HookContext
 from ai.hooks.runner import HookRunner
 
 logger = logging.getLogger(__name__)
@@ -30,14 +30,14 @@ def schedule_post_response_hooks(
     hook_runner: HookRunner,
     turn: AgentTurnResult,
 ) -> None:
-    """ Schedule post-response hooks for a completed turn on this connection.
-    
+    """Schedule post-response hooks for a completed turn on this connection.
+
     Args:
         state: The WebSocket state.
         hook_runner: The HookRunner instance.
         turn: The AgentTurnResult instance.
     """
-    hctx = build_hook_context(
+    hctx = HookContext(
         user_id=turn.user_id,
         conversation_id=turn.response.conversation_id,
         user_message=turn.user_message,
@@ -52,7 +52,7 @@ def schedule_post_response_hooks(
 
 
 async def run_post_response_hooks(hook_runner: HookRunner, hctx: HookContext, client_id: str) -> None:
-    """ Run post-response hooks without writing late errors to the websocket. """
+    """Run post-response hooks without writing late errors to the websocket."""
     try:
         await hook_runner.run_after_response(hctx)
     except Exception:  # noqa: BLE001
@@ -67,7 +67,7 @@ async def handle_chat_turn(
 ) -> None:
     """
     Run one chat turn and send all progress/final frames for that turn.
-    
+
     Args:
         websocket: The WebSocket connection.
         state: The WebSocket state.

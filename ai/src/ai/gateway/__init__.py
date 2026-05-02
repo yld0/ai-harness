@@ -1,1 +1,1 @@
-""" External chat gateways such as WhatsApp and Discord. """
+"""External chat gateways such as WhatsApp and Discord."""

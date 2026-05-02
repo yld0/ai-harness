@@ -1,4 +1,4 @@
-""" Liveness and optional dependency probes. """
+"""Liveness and optional dependency probes."""
 
 from typing import Any
 
@@ -30,7 +30,7 @@ async def healthz() -> dict[str, Any]:
         return {"ok": True, "deps": deps}
 
     async def _head(client: httpx.AsyncClient, url: str) -> str:
-        """ Probe a URL with a HEAD request and return the status code as a string. """
+        """Probe a URL with a HEAD request and return the status code as a string."""
         try:
             r = await client.head(url, follow_redirects=True)
             return f"{r.status_code}"

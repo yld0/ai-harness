@@ -34,9 +34,7 @@ def init_sentry(
     if not dsn:
         return
     sdk = (loader or _load_sentry)()
-    sample_raw = (
-        str(telemetry_config.TELEMETRY_SAMPLE_RATE) if telemetry_config else os.getenv("TELEMETRY_SAMPLE_RATE", "1.0")
-    ).strip() or "1.0"
+    sample_raw = (str(telemetry_config.TELEMETRY_SAMPLE_RATE) if telemetry_config else os.getenv("TELEMETRY_SAMPLE_RATE", "1.0")).strip() or "1.0"
     sample = max(0.0, min(1.0, float(sample_raw)))
     component = (telemetry_config.COMPONENT if telemetry_config else os.getenv("COMPONENT", "ai")).strip() or "ai"
 

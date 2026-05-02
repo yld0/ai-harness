@@ -55,9 +55,7 @@ def test_effort_routes_to_expected_provider() -> None:
 def test_explicit_model_override_wins() -> None:
     async def run() -> None:
         openrouter = FakeClient("openrouter")
-        router = ProviderRouter(clients={"gemini": FakeClient("gemini"), "openrouter": openrouter}).with_options(
-            model_override="openai/gpt-4.1-mini"
-        )
+        router = ProviderRouter(clients={"gemini": FakeClient("gemini"), "openrouter": openrouter}).with_options(model_override="openai/gpt-4.1-mini")
 
         turn = await router.complete(
             [ProviderMessage(role="user", content="override")],

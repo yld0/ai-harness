@@ -117,6 +117,101 @@ Phase 4 (`memory-decay-tick` route) implements half-life scoring and `expires` v
 
 ---
 
+## 5. Gateway Hardening (WhatsApp + Shared Forwarder)
+
+**Priority:** Medium (WhatsApp is shipped but rough; Discord covered in §1)
+**Effort:** Medium (split into 3 PRs)
+**Scope:** `src/ai/gateway/{http_forwarder,whatsapp/*,discord/*}.py`
+
+Phase 17 shipped a working WhatsApp gateway and Discord stub, but operational
+hardening, tests, and several correctness gaps remain. Audit done 2026-05-02
+against `ai/src/ai/gateway/` and `ai/docs/gateway.md`.
+
+### 5a. Showstopper / correctness
+
+- **No CLI entry point.** `docs/gateway.md:56` documents
+  `python -m ai.gateway.whatsapp.client`, but `whatsapp/client.py` has no
+  `if __name__ == "__main__":` block and there is no `__main__.py`. The command
+  imports the module and exits. Fix: add `__main__.py` (or a
+  `[project.scripts]` entry like `ai-whatsapp = "ai.gateway.whatsapp.client:main"`).
+- **No tests at all** for `gateway/`. Forwarder, `RateLimiter`,
+  `build_request_body`, and the WhatsApp text/JID extractors are easy unit
+  targets; Discord is already listed in §1.
+- **Empty bearer token allowed.** `HarnessForwarder.__init__` accepts
+  `bearer_token = ""`; the harness then 401s with no useful diagnostic. Fail
+  fast at startup if `GATEWAY_JWT` is unset.
+- **`build_request_body(user_id=...)` accepts `user_id` but never uses it.**
+  Harmless (harness derives user from JWT `sub`) but the signature is
+  misleading. Either drop the param or wire it into a header for tracing.
+
+### 5b. Functionality gaps
+
+- **No streaming / progress relay.** HTTP `/v3/agent/question` returns one
+  final response, so `chain_of_thought`, `task_update`, and "typing" events are
+  lost. WhatsApp will look frozen for multi-second runs because there is no
+  `SendChatPresence("composing", ...)` heartbeat.
+- **No reply chunking / formatting transform.** Replies are sent verbatim. The
+  prompt-builder hint asks the LLM to keep replies ≤4096 chars, but nothing
+  enforces it; Markdown→WhatsApp formatting (`*bold*`, `_italic_`, no `#`
+  headings) isn't applied either.
+- **Conversation grouping is too coarse.** `conversation_id = chat JID`, so
+  one WhatsApp contact = one conversation forever — no per-topic split, no
+  rotation. Agent history accumulates indefinitely under that single key.
+- **Group chats answer everything.** `_is_own_message` is filtered, but DMs
+  vs groups aren't distinguished and there's no `@mention` / wake-word gate.
+  Adding the bot to a group makes it reply to every text message.
+- **Non-text messages dropped silently.** Images, audio, voice notes,
+  documents, buttons, locations, reactions, and quoted/replied messages are
+  all skipped with a single `ignoring non-text message` debug log — no type
+  breakdown.
+- **No message dedupe / idempotency.** Neonize can redeliver after reconnect;
+  nothing keys off `message_ev.Info.ID`, so the agent can rerun the same
+  prompt.
+- **No retries / status differentiation.** Any `httpx` error becomes a generic
+  `_ERROR_REPLY`. No backoff, no 5xx-vs-4xx handling, no surfacing of
+  `RateLimitError` raised on the harness side.
+- **`asyncio.run()` per inbound message.** `WhatsAppMessageHandler.handle`
+  spins up a fresh event loop and a fresh `httpx.AsyncClient` for every
+  message — no connection pool reuse and inbound traffic serializes.
+- **Rate limiter never garbage-collects.** `RateLimiter._log` is a
+  `defaultdict(list)` that accumulates one entry per sender_id forever. Long
+  uptimes leak memory across the unique-sender set; also no hard cap on
+  `_log[sender_id]` length.
+
+### 5c. Coding-standard violations vs `AGENTS.md`
+
+- **Config not via `shared.envutil.config` / `ai.config`.** Every env var
+  (`HARNESS_URL`, `GATEWAY_JWT`, `GATEWAY_TIMEOUT_S`, `GATEWAY_RATE_LIMIT_*`,
+  `GATEWAY_MAX_TEXT_LEN`, `WHATSAPP_*`) is read with raw `os.getenv` at module
+  import time (`http_forwarder.py:65-68`, `handlers.py:30`, `client.py:64-66`).
+  The "Configuration via shared.envutil.config" rule says these should live in
+  a registered dataclass.
+- **Broad `except Exception`** in `_extract_text`, `_sender_jid`,
+  `_conversation_id`, `_is_own_message`, the final handler, `_send_reply`, and
+  `WhatsAppClient.disconnect`. Violates the "Be Specific (Avoid the Catch-All)"
+  rule; should narrow to neonize/protobuf attribute errors and `httpx`-specific
+  errors.
+
+### 5d. Operational nice-to-haves
+
+- **Counters / metrics:** `messages_received`, `messages_dropped`,
+  `forward_failures`, `rate_limited`, `latency_ms`. Currently flying blind.
+- **`request_id` correlation.** Forwarder doesn't set `X-Request-ID`, so
+  gateway↔harness traces don't link.
+- **Multi-process rate-limit backend** (Redis token bucket) — already noted
+  in the docstring, but no abstraction to swap it.
+
+### Suggested PR slices
+
+1. **Entry point + tests + config refactor** (small, no behavioural change).
+2. **Group-chat gating + message dedupe + chat-presence heartbeat**
+   (correctness/UX).
+3. **Discord full bot** — see §1.
+
+**Reference:** `ai/docs/gateway.md` (env table + security notes).
+
+---
+
 ## Implementation Order
 
 | # | Item | Effort | Gate |
@@ -124,8 +219,10 @@ Phase 4 (`memory-decay-tick` route) implements half-life scoring and `expires` v
 | 1 | Cron Tool Stub | 1–2 h | None — do it now |
 | 2 | OB1 Repo Review | 1 h | None — research |
 | 3 | Temporal Decay Review | 2 h | None — research first |
-| 4 | Discord Full Bot | 4–8 h | Product decision + discord.py |
-| 5 | v2 Deprecated Cleanup | 1 h | Staging green ≥7 days |
+| 4 | Gateway Hardening §5a (entry point + tests + config) | 3–4 h | None — do it now |
+| 5 | Gateway Hardening §5b (group gating, dedupe, presence) | 4–6 h | After §5a |
+| 6 | Discord Full Bot | 4–8 h | Product decision + discord.py |
+| 7 | v2 Deprecated Cleanup | 1 h | Staging green ≥7 days |
 
 
 
@@ -242,7 +339,7 @@ flowchart TB
 | 13 | Memories GQL Bridge | 11-type bridge (memories, rules, valuations, spaces, chats, watchlists, alerts…), Bridge ABC |
 | 14 | Routes Implementation | 12 route handlers (actions-*, spaces-*, heartbeat-extract, memory-decay-tick, llm-council…) |
 | 15 | LLM Council | 3-stage: parallel collect → peer ranking → judge synthesis; `CouncilClient`; config |
-| 16 | Standalone CLI | `ai chat` / `python -m ai.cli chat`, argparse, `CliProgressSink`, lazy FastAPI import, REPL + `--once` |
+| 16 | Standalone CLI | `ai chat` / `python -m ai.cli.main chat`, argparse, `CliProgressSink`, lazy FastAPI import, REPL + `--once` |
 | 17 | Gateway WhatsApp + Discord | `HarnessForwarder`, `RateLimiter`, neonize lazy import, Discord stub |
 | 18 | Cron Tool Stub | _(missing — see `24-remaining-work.md` §1)_ |
 | 19 | Autonomous Skill Review | `SkillReviewHook`, `ReviewRunner`, path-jailed queue, dedupe, background thread |
@@ -281,3 +378,10 @@ See [`24-remaining-work.md`](./24-remaining-work.md):
 - Direct Gemini plus OpenRouter fallback needs consistent usage capture and schema normalization per provider.
 - Automations need idempotency via `automationRunId` + persisted interaction dedupe.
 - Rules + memories GQL add latency; cache and warm at session start.
+- **Auto-dream:** Default `AI_AUTO_DREAM_ENABLED` is false. To try Claude-code-style consolidation, enable `extract_memories` and `auto_dream` in `AI_HOOKS_ENABLED` (comma list), set `AI_AUTO_DREAM_ENABLED`, and tune `AI_AUTO_DREAM_MIN_HOURS` / `AI_AUTO_DREAM_MIN_SESSIONS` / `AI_AUTO_DREAM_MODEL`. Lock file: each user's `memory/.consolidate-lock` stores last consolidation via mtime.
+
+
+# Future
+
+- Gateway hardening (WhatsApp + Discord) — see §5 above for the full audit and
+  PR slicing.

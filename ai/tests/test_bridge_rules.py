@@ -103,9 +103,7 @@ async def test_push_adds_local_rules_to_gql(tmp_path):
     # Seed MEMORY.md with a rules section
     memory_md = layout.guarded_user_path("u1", "MEMORY.md")
     memory_md.write_text(
-        "## Rules (synced from GQL 2026-01-01T00:00:00Z)\n\n"
-        "### Always-apply\n- **Style**: Be concise.\n\n"
-        "### Conditional\n- **Finance**: Use numbers.\n"
+        "## Rules (synced from GQL 2026-01-01T00:00:00Z)\n\n" "### Always-apply\n- **Style**: Be concise.\n\n" "### Conditional\n- **Finance**: Use numbers.\n"
     )
 
     mock_client = AsyncMock()

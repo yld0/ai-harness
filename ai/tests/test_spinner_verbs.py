@@ -1,4 +1,4 @@
-""" Tests for spinner verb helpers (_truncate_query, choose_spinner_verb_bucket). """
+"""Tests for spinner verb helpers (_truncate_query, choose_spinner_verb_bucket)."""
 
 import hashlib
 from unittest.mock import patch
@@ -9,32 +9,31 @@ from ai.utils.spinner_verbs import (
     choose_spinner_verb_bucket,
 )
 
-
 # ── _truncate_query ───────────────────────────────────────────────────────────
 
 
 def test_truncate_query_first_sentence() -> None:
-    """ Stops at the first period. """
+    """Stops at the first period."""
     assert _truncate_query("hello world. more stuff") == "hello world"
 
 
 def test_truncate_query_newline() -> None:
-    """ Stops at the first newline. """
+    """Stops at the first newline."""
     assert _truncate_query("first line\nsecond line") == "first line"
 
 
 def test_truncate_query_strips_whitespace() -> None:
-    """ Leading/trailing whitespace is removed. """
+    """Leading/trailing whitespace is removed."""
     assert _truncate_query("  padded  ") == "padded"
 
 
 def test_truncate_query_no_delimiter() -> None:
-    """ Returns the full string when no period or newline present. """
+    """Returns the full string when no period or newline present."""
     assert _truncate_query("heartbeat-extract low") == "heartbeat-extract low"
 
 
 def test_truncate_query_empty_first_segment() -> None:
-    """ Falls back to full stripped input when splitting yields empty first part. """
+    """Falls back to full stripped input when splitting yields empty first part."""
     assert _truncate_query(".starts with dot") == ".starts with dot"
 
 
@@ -42,19 +41,19 @@ def test_truncate_query_empty_first_segment() -> None:
 
 
 def test_choose_bucket_no_context_uses_random() -> None:
-    """ Without context, uses random.choice like the docstring fallback. """
+    """Without context, uses random.choice like the docstring fallback."""
     with patch("ai.utils.spinner_verbs.random.choice", return_value="Cogitating"):
         assert choose_spinner_verb_bucket(None) == "Cogitating…"
 
 
 def test_choose_bucket_no_context_pick_from_verbs() -> None:
-    """ Unpatched random still draws from SPINNER_VERBS. """
+    """Unpatched random still draws from SPINNER_VERBS."""
     verb = choose_spinner_verb_bucket(None).rstrip("…")
     assert verb in SPINNER_VERBS
 
 
 def test_choose_bucket_same_context_stable() -> None:
-    """ Same *context* always yields the same label (hash of first 40 chars). """
+    """Same *context* always yields the same label (hash of first 40 chars)."""
     ctx = "analyzing the portfolio diversification strategy"
     a = choose_spinner_verb_bucket(ctx)
     b = choose_spinner_verb_bucket(ctx)
@@ -62,7 +61,7 @@ def test_choose_bucket_same_context_stable() -> None:
 
 
 def test_choose_bucket_finance_core_pool() -> None:
-    """ Finance-related words map into the finance core verb pool. """
+    """Finance-related words map into the finance core verb pool."""
     ctx = "running dcf valuation on this name"
     label = choose_spinner_verb_bucket(ctx)
     assert label == choose_spinner_verb_bucket(ctx)
@@ -70,7 +69,7 @@ def test_choose_bucket_finance_core_pool() -> None:
 
 
 def test_choose_bucket_math_pool() -> None:
-    """ Math / calculation stems hit the math bucket. """
+    """Math / calculation stems hit the math bucket."""
     ctx = "statistics and formula work"
     label = choose_spinner_verb_bucket(ctx)
     assert label == choose_spinner_verb_bucket(ctx)
@@ -78,7 +77,7 @@ def test_choose_bucket_math_pool() -> None:
 
 
 def test_choose_bucket_no_match_uses_global_list() -> None:
-    """ Unmatched alphanumeric words use SPINNER_VERBS with the same md5 index. """
+    """Unmatched alphanumeric words use SPINNER_VERBS with the same md5 index."""
     ctx = "xyz qwerty nondescript fluff"
     key = ctx[:40].encode()
     idx = int(hashlib.md5(key, usedforsecurity=False).hexdigest(), 16)
@@ -87,12 +86,12 @@ def test_choose_bucket_no_match_uses_global_list() -> None:
 
 
 def test_choose_bucket_ends_with_ellipsis() -> None:
-    """ Every return ends with U+2026. """
+    """Every return ends with U+2026."""
     assert choose_spinner_verb_bucket("code review and deploy").endswith("…")
 
 
 def test_choose_bucket_matches_alpha_bucket_before_finance_when_first() -> None:
-    """ 'alpha' is in the alpha/moat bucket, which precedes unrelated buckets. """
+    """'alpha' is in the alpha/moat bucket, which precedes unrelated buckets."""
     ctx = "re-search, paused: alpha!"
     label = choose_spinner_verb_bucket(ctx)
     assert label.rstrip("…") in {"Alphaing", "Betaing", "FatPitching", "Flywheeling", "Moating"}

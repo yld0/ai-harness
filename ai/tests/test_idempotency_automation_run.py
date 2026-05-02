@@ -1,4 +1,4 @@
-""" Automation run idempotency: duplicate ``automationRunId`` replay cache. """
+"""Automation run idempotency: duplicate ``automationRunId`` replay cache."""
 
 from __future__ import annotations
 

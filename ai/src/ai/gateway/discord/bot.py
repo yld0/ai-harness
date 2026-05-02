@@ -27,7 +27,7 @@ NOT_IMPLEMENTED_MSG = "Discord gateway is not yet implemented. " "See FUTURE.md 
 
 
 class DiscordBot:
-    """ Stub Discord bot — raises ``NotImplementedError`` on ``start()``. """
+    """Stub Discord bot — raises ``NotImplementedError`` on ``start()``."""
 
     def __init__(self, **kwargs) -> None:  # accept any kwargs for future compat
         logger.warning("DiscordBot: %s", NOT_IMPLEMENTED_MSG)

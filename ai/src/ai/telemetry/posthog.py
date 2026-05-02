@@ -26,9 +26,7 @@ def init_posthog(
     if not key:
         _posthog_client = None
         return
-    host = (
-        (telemetry_config.POSTHOG_HOST if telemetry_config else "") or os.getenv("POSTHOG_HOST", "") or "https://app.posthog.com"
-    ).strip()
+    host = ((telemetry_config.POSTHOG_HOST if telemetry_config else "") or os.getenv("POSTHOG_HOST", "") or "https://app.posthog.com").strip()
     if factory is not None:
         _posthog_client = factory(project_api_key=key, host=host)
         return

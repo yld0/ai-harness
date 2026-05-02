@@ -9,9 +9,12 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
+from dataclasses import replace
+
 import pytest
 
-from ai.hooks.base import HookConfig, HookContext
+from ai.config import hook_config
+from ai.hooks.types import HookContext
 from ai.hooks.skill_review import SkillReviewHook, _count_tool_calls
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
@@ -31,7 +34,7 @@ def _make_ctx(
     user_id: str = "u1",
     conv_id: str = "c1",
 ) -> HookContext:
-    cfg = HookConfig(skill_review_threshold=threshold)
+    cfg = replace(hook_config, AI_SKILL_REVIEW_THRESHOLD=threshold)
     return HookContext(
         user_id=user_id,
         conversation_id=conv_id,
@@ -252,17 +255,16 @@ def test_skill_review_registered_in_default_hooks():
 
     assert "skill_review" in _DEFAULT_HOOKS
     assert isinstance(_DEFAULT_HOOKS["skill_review"], SkillReviewHook)
+    assert "extract_memories" in _DEFAULT_HOOKS
 
 
 # ─── HookConfig env-backed threshold ─────────────────────────────────────────
-
-
 def test_load_hook_config_reads_threshold(monkeypatch):
     monkeypatch.setenv("AI_SKILL_REVIEW_THRESHOLD", "25")
     from ai.hooks.base import load_hook_config
 
     cfg = load_hook_config()
-    assert cfg.skill_review_threshold == 25
+    assert cfg.AI_SKILL_REVIEW_THRESHOLD == 25
 
 
 def test_load_hook_config_default_threshold():
@@ -271,4 +273,4 @@ def test_load_hook_config_default_threshold():
 
     os.environ.pop("AI_SKILL_REVIEW_THRESHOLD", None)
     cfg = load_hook_config()
-    assert cfg.skill_review_threshold == 10
+    assert cfg.AI_SKILL_REVIEW_THRESHOLD == 10

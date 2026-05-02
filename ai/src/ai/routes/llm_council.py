@@ -10,33 +10,35 @@ Input keys (all optional):
                            request's user query text).
   ``models``             — list[str] override for panelist model IDs.
   ``judge_model``        — str override for the synthesising judge.
-  ``include_rankings``   — bool, default from COUNCIL_INCLUDE_RANKINGS env.
-  ``timeout``            — float, per-model HTTP timeout seconds.
+  ``include_rankings``   — bool, default True.
+  ``council_version``    — "v1" or "v2"; defaults to route metadata or v2.
 """
 
 from __future__ import annotations
 
 import logging
-import os
 
-from ai.council.client import CouncilClient
-from ai.council.council import run_council
+from ai.config import council_config
+from ai.council.runner import DEFAULT_VERSION, CouncilVersion, run_council
 from ai.routes.context import RouteContext, RouteResult
 
 logger = logging.getLogger(__name__)
-
-_DEFAULT_MODELS_STR = os.getenv(
-    "COUNCIL_MODELS",
-    "openai/gpt-4o,anthropic/claude-sonnet-4-5,google/gemini-2.0-flash-001",
-)
-_DEFAULT_CHAIRMAN = os.getenv("COUNCIL_CHAIRMAN_MODEL", "anthropic/claude-sonnet-4-5")
 
 
 def _str_to_models(s: str) -> list[str]:
     return [m.strip() for m in s.split(",") if m.strip()]
 
 
+def _route_metadata(ctx: RouteContext) -> dict:
+    request = ctx.request
+    context = getattr(request, "context", None)
+    route_metadata = getattr(context, "route_metadata", None)
+    return route_metadata or {}
+
+
 async def run(ctx: RouteContext) -> RouteResult:
+    route_metadata = _route_metadata(ctx)
+
     # Resolve the query
     query: str = ctx.input.get("query", "")
     if not query:
@@ -54,24 +56,17 @@ async def run(ctx: RouteContext) -> RouteResult:
     elif isinstance(models_input, str) and models_input:
         models = _str_to_models(models_input)
     else:
-        models = _str_to_models(_DEFAULT_MODELS_STR)
+        models = list(council_config.COUNCIL_MODELS)
 
     if not models:
         return RouteResult(text="No council models configured.", ok=False, error="no_models")
 
-    judge_model: str = ctx.input.get("judge_model") or _DEFAULT_CHAIRMAN
+    judge_model: str = ctx.input.get("judge_model") or council_config.CHAIRMAN_MODEL
 
     include_rankings_raw = ctx.input.get("include_rankings")
-    if include_rankings_raw is None:
-        include_rankings = os.getenv("COUNCIL_INCLUDE_RANKINGS", "1").lower() in (
-            "1",
-            "true",
-            "yes",
-        )
-    else:
-        include_rankings = bool(include_rankings_raw)
-
-    timeout: float = float(ctx.input.get("timeout", os.getenv("COUNCIL_TIMEOUT_S", "120")))
+    include_rankings = True if include_rankings_raw is None else bool(include_rankings_raw)
+    version: CouncilVersion = ctx.input.get("council_version") or route_metadata.get("council_version") or DEFAULT_VERSION
+    no_of_council = ctx.input.get("no_of_council") or route_metadata.get("no_of_council")
 
     await ctx.progress.emit(
         "task_progress",
@@ -83,18 +78,21 @@ async def run(ctx: RouteContext) -> RouteResult:
         },
     )
 
-    client = CouncilClient(timeout=timeout)
     try:
         result = await run_council(
             query,
+            version=version,
             models=models,
             judge_model=judge_model,
-            client=client,
             include_rankings=include_rankings,
+            no_of_council=int(no_of_council) if no_of_council is not None else None,
         )
     except Exception as exc:  # noqa: BLE001
         logger.exception("llm-council: run_council raised")
         return RouteResult(text=f"Council failed: {exc}", ok=False, error="council_error")
+
+    judge = result.stage3.model if result.stage3 is not None else judge_model
+    final_text = result.stage3.response if result.stage3 is not None else "Council failed to synthesise a response."
 
     await ctx.progress.emit(
         "task_progress",
@@ -102,8 +100,9 @@ async def run(ctx: RouteContext) -> RouteResult:
             "task_id": "llm-council",
             "title": "Council complete",
             "items": [
-                {"type": "item", "content": f"Judge: {result.judge_model}"},
-                {"type": "item", "content": f"Panelists: {len(result.opinions)}"},
+                {"type": "item", "content": f"Version: {result.version}"},
+                {"type": "item", "content": f"Judge: {judge}"},
+                {"type": "item", "content": f"Panelists: {len(models)}"},
             ],
         },
     )
@@ -111,20 +110,21 @@ async def run(ctx: RouteContext) -> RouteResult:
     # Build structured metadata for the caller
     sub_opinions = [
         {
-            "model": op.model,
-            "text": op.text[:2000],  # truncate for metadata size
-            "failed": op.failed,
-            **({"error": op.error} if op.error else {}),
+            "model": item.model,
+            "text": item.response[:2000],  # truncate for metadata size
+            "failed": False,
         }
-        for op in result.opinions
+        for item in result.stage1
     ]
     metadata = {
         "route": "llm-council",
-        "judge_model": result.judge_model,
-        "panelists": len(result.opinions),
-        "panelists_succeeded": sum(1 for op in result.opinions if not op.failed),
+        "council_version": result.version,
+        "judge_model": judge,
+        "panelists": len(models),
+        "panelists_succeeded": len(result.stage1),
         "opinions": sub_opinions,
-        "aggregate_rankings": result.aggregate_rankings,
+        "rankings": [ranking.model_dump() for ranking in result.stage2],
+        "aggregate_rankings": [ranking.model_dump() for ranking in result.aggregate_rankings],
         **result.metadata,
     }
-    return RouteResult(text=result.final_text, metadata=metadata)
+    return RouteResult(text=final_text, metadata=metadata)

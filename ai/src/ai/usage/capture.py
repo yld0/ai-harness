@@ -128,7 +128,7 @@ def _ai_client() -> Any:
 
 
 async def capture(
-    response: ProviderResponse,
+    response: ProviderResponse | dict[str, Any],
     *,
     started_at: float | None = None,  # accepted but unused; reserved for future latency tracking
 ) -> None:
@@ -144,6 +144,9 @@ async def capture(
 
     if not bearer_token or not conversation_id:
         return  # no-op outside a live agent turn
+
+    if isinstance(response, dict):
+        return
 
     usage = _extract_usage(response)
     if not usage:

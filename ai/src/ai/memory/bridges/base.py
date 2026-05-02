@@ -22,7 +22,7 @@ ConflictRule = Literal["gql_wins", "file_wins", "last_write_wins"]
 
 @dataclass
 class PullResult:
-    """ Result of a bridge pull (GQL → disk). """
+    """Result of a bridge pull (GQL → disk)."""
 
     ok: bool
     records_written: int = 0
@@ -33,7 +33,7 @@ class PullResult:
 
 @dataclass
 class PushResult:
-    """ Result of a bridge push (disk → GQL). """
+    """Result of a bridge push (disk → GQL)."""
 
     ok: bool
     records_pushed: int = 0

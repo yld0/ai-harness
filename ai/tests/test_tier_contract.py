@@ -107,9 +107,7 @@ def test_golden_yaml_majority_are_t0(project_root: str) -> None:
     t0_count = sum(1 for c in cases if c.get("tier", "T0") == "T0")
     total = len(cases)
     # T0 should be at least 50% of cases.
-    assert t0_count / total >= 0.5, (
-        f"T0 cases are {t0_count}/{total} ({t0_count/total:.0%}). " "T0 should be the dominant tier to keep the landing bar lean."
-    )
+    assert t0_count / total >= 0.5, f"T0 cases are {t0_count}/{total} ({t0_count/total:.0%}). " "T0 should be the dominant tier to keep the landing bar lean."
 
 
 def test_golden_yaml_t2_cases_exist(project_root: str) -> None:

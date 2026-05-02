@@ -50,11 +50,7 @@ async def run(ctx: RouteContext) -> RouteResult:
                 entities_failed += 1
                 logger.warning("synthesis: %s/%s failed: %s", kind, entity_id, exc)
 
-    summary = (
-        f"Weekly synthesis complete: {entities_processed} entities updated"
-        + (f", {entities_failed} failed" if entities_failed else "")
-        + "."
-    )
+    summary = f"Weekly synthesis complete: {entities_processed} entities updated" + (f", {entities_failed} failed" if entities_failed else "") + "."
     logger.info(summary)
     return RouteResult(
         text=summary,

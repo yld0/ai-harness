@@ -1,4 +1,4 @@
-""" Shared constants for the AI harness. """
+"""Shared constants for the AI harness."""
 
 import logging
 

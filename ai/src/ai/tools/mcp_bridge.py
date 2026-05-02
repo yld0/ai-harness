@@ -57,9 +57,7 @@ class MCPToolBridge(Tool):
         self._tool_def = tool_def
         self._client = client
         self._server_cfg = server_cfg
-        self.required_permission: PermissionMode = (  # type: ignore[misc]
-            PermissionMode.WorkspaceWrite if server_cfg.allowlisted else PermissionMode.ReadOnly
-        )
+        self.required_permission: PermissionMode = PermissionMode.WorkspaceWrite if server_cfg.allowlisted else PermissionMode.ReadOnly  # type: ignore[misc]
 
     @property
     def parameters_json_schema(self) -> dict[str, Any]:

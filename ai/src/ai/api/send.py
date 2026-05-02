@@ -1,4 +1,4 @@
-""" WebSocket wire helpers: event shapes for progress streaming. """
+"""WebSocket wire helpers: event shapes for progress streaming."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ def utc_ts() -> str:
 def event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     """
     One server→client progress frame: { type, payload }.
-    
+
     Args:
         event_type: The event type.
         payload: The event payload.
@@ -104,10 +104,10 @@ def chat_response_event(data: dict[str, Any]) -> dict[str, Any]:
 
 
 async def send_ws_partial(response: ChatResponse) -> None:
-    """ No-op stub; real WebSocket push is wired when the llm-council route handler lands. """
+    """No-op stub; real WebSocket push is wired when the llm-council route handler lands."""
     logger.debug("send_ws_partial stub invoked")
 
 
 async def send_ws_task_update(task: TaskUpdateMessage) -> None:
-    """ No-op stub; real WebSocket push is wired when the llm-council route handler lands. """
+    """No-op stub; real WebSocket push is wired when the llm-council route handler lands."""
     logger.debug("send_ws_task_update stub invoked task_id=%s items=%d", task.task_id, len(task.items))
