@@ -1,1 +1,1 @@
-"""Surface-level GraphQL clients — one module per GQL service namespace."""
+""" Surface-level GraphQL clients — one module per GQL service namespace. """

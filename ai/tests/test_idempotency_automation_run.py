@@ -1,10 +1,12 @@
-"""Automation run idempotency: duplicate ``automationRunId`` replay cache."""
+""" Automation run idempotency: duplicate ``automationRunId`` replay cache. """
 
 from __future__ import annotations
 
+import aiocache
+import pytest
 from fastapi.testclient import TestClient
 
-from ai.api.automation_routes import replay_cache
+import ai.api.automation_routes as ar_mod
 from ai.main import app
 
 
@@ -12,8 +14,9 @@ def test_automation_run_replays_same_automation_run_id(
     auth_env: None,
     auth_headers,
     automation_payload,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    replay_cache.clear()
+    monkeypatch.setattr(ar_mod, "replay_cache", aiocache.SimpleMemoryCache())
 
     with TestClient(app) as client:
         first = client.post(
@@ -39,8 +42,9 @@ def test_automation_run_idempotency_scoped_by_user(
     auth_env: None,
     auth_headers,
     automation_payload,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    replay_cache.clear()
+    monkeypatch.setattr(ar_mod, "replay_cache", aiocache.SimpleMemoryCache())
 
     with TestClient(app) as client:
         first = client.post(

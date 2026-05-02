@@ -71,14 +71,14 @@ Approximate order:
 | **Hooks** | `hooks/runner.py`, `compact.py`, `collapse.py`, `auto_dream.py`, `skill_review.py` | Post-response; configured via env. |
 | **Council** | `council/*` | Multi-model panel + chairman; invoked from council route. |
 | **Telemetry** | `telemetry/*` | Sentry, PostHog, Langfuse; redaction helpers. |
-| **CLI** | `cli/chat.py`, `__main__.py` | Local chat; can pass through JWT for tools. |
+| **CLI** | `cli/chat.py`, `main.py` | Local chat; can pass through JWT for tools. |
 | **Gateway** | `gateway/*` | WhatsApp (optional **neonize**), Discord stub, HTTP forwarder to **`/v3/agent/question`**. |
 | **Usage** | `usage/capture.py` | Records usage in a GraphQL-oriented shape for downstream persistence. |
 | **Deprecated v2** | `deprecated/v2/*` | Legacy stack including **`gql`**-based GraphQL clients — **not** wired as the default v3 runner path. |
 
 ## GraphQL in v3
 
-v3 uses a thin **`tools/graphql.py`** client (HTTP POST to **`{GATEWAY_URL}/graphql`** with Bearer token) plus query strings in **`rules/graphql.py`** and selected **`memory/bridges`**. Rich per-domain clients from ai-master live under **`deprecated/v2/api/`** only.
+v3 uses a thin **`clients/transport.py`** client (HTTP POST to **`GATEWAY_URL`** with Bearer token) plus typed namespace clients in **`clients/<namespace>.py`**. Caching is opt-in at the caller via **`aiocache`** instead of being built into the transport.
 
 ## Non-goals (behavioral)
 

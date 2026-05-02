@@ -11,13 +11,13 @@ Usage examples:
     # With options:
     ai chat --model openai/gpt-4o --mode plan --user-id alice
 
-    # Equivalent: python -m ai.cli chat ...
+    # Equivalent: python -m ai.cli.main chat ...
 
 Environment variables (all optional):
-    YLD_JWT          — Bearer token forwarded to GraphQL tools.
+    CLI_BEARER_TOKEN — Bearer token forwarded to GraphQL tools.
     CLI_USER_ID      — Default user id (default: cli-user).
-    MEMORY_ROOT      — Root directory for PARA memory files.
-    DEV_ECHO_MODE — Set to True for deterministic offline testing.
+    CLI_MEMORY_ROOT  — Root directory for PARA memory files.
+    DEV_ECHO_MODE    — Set to True for deterministic offline testing.
 """
 
 from __future__ import annotations
@@ -26,15 +26,17 @@ import argparse
 import asyncio
 import os
 import sys
-from typing import Any, Optional
+from typing import Any
 
-from ai.agent.progress import ProgressSink
+from ai.agent.runner import AgentRunner
+from ai.config import agent_config, cli_config
+from ai.schemas.agent import AgentChatRequest, ChatContext, ChatRequest
 
 # ─── Progress sink for CLI ────────────────────────────────────────────────────
 
 
 class CliProgressSink:
-    """Writes CoT / task-progress events to stderr so stdout stays clean."""
+    """ Writes CoT / task-progress events to stderr so stdout stays clean. """
 
     def __init__(self, verbose: bool = False) -> None:
         self._verbose = verbose
@@ -84,14 +86,11 @@ def _build_request(
     *,
     user_id: str,
     conversation_id: str,
-    model: Optional[str],
+    model: str | None,
     mode: str,
-    route: Optional[str],
-):
-    """Construct a minimal ``AgentChatRequestV3`` — imported lazily to keep
-    the cold-start path free of heavy deps."""
-    from ai.schemas.agent import AgentChatRequest, ChatContext, ChatRequest
-
+    route: str | None,
+) -> AgentChatRequest:
+    """Construct a minimal ``AgentChatRequestV3``."""
     route_metadata: dict[str, Any] = {"channel": "cli"}
     return AgentChatRequest(
         conversation_id=conversation_id,
@@ -104,20 +103,28 @@ def _build_request(
 # ─── Single-shot and REPL ─────────────────────────────────────────────────────
 
 
+def _apply_config_overrides(args: argparse.Namespace) -> None:
+    """ Apply parsed CLI args over env-backed defaults. """
+    cli_config.CLI_USER_ID = getattr(args, "user_id", None) or cli_config.CLI_USER_ID
+    cli_config.CLI_BEARER_TOKEN = getattr(args, "api_key", None) or cli_config.CLI_BEARER_TOKEN
+    cli_config.CLI_MEMORY_ROOT = getattr(args, "memory_root", None) or cli_config.CLI_MEMORY_ROOT
+    cli_config.CLI_MODEL = getattr(args, "model", None) or cli_config.CLI_MODEL
+    agent_config.MEMORY_ROOT = cli_config.CLI_MEMORY_ROOT
+
+
 async def _run_query(
     query: str,
     *,
     user_id: str,
-    bearer_token: Optional[str],
-    model: Optional[str],
+    bearer_token: str | None,
+    memory_root: str,
+    model: str | None,
     mode: str,
-    route: Optional[str],
+    route: str | None,
     verbose: bool,
     conversation_id: str = "cli-session",
 ) -> str:
     """Run one query through AgentRunner and return the response text."""
-    from ai.agent.runner import AgentRunner
-
     runner = AgentRunner()
     sink = CliProgressSink(verbose=verbose)
     request = _build_request(
@@ -137,35 +144,42 @@ async def _run_query(
     return response.response.text or ""
 
 
-def _run_once(args: argparse.Namespace, cfg) -> int:
+def _run_once(args: argparse.Namespace) -> int:
     """Single-shot mode: run one query, print to stdout, return exit code."""
     query: str = args.once
     if not query:
         print("error: --once requires a non-empty query", file=sys.stderr)
         return 1
 
-    if cfg.verbose:
-        print(f"  user: {cfg.user_id}  mode: {cfg.mode}", file=sys.stderr)
+    mode = args.mode or "auto"
+    route = args.route or None
+    verbose = bool(args.verbose)
+    if verbose:
+        print(f"  user: {cli_config.CLI_USER_ID}  mode: {mode}", file=sys.stderr)
 
     text = asyncio.run(
         _run_query(
             query,
-            user_id=cfg.user_id,
-            bearer_token=cfg.bearer_token,
-            model=cfg.model,
-            mode=cfg.mode,
-            route=cfg.route,
-            verbose=cfg.verbose,
+            user_id=cli_config.CLI_USER_ID,
+            bearer_token=cli_config.CLI_BEARER_TOKEN or None,
+            memory_root=cli_config.CLI_MEMORY_ROOT,
+            model=cli_config.CLI_MODEL or None,
+            mode=mode,
+            route=route,
+            verbose=verbose,
         )
     )
     print(text)
     return 0
 
 
-def _run_repl(args: argparse.Namespace, cfg) -> int:
+def _run_repl(args: argparse.Namespace) -> int:
     """Interactive REPL: read queries from stdin, print responses to stdout."""
+    mode = args.mode or "auto"
+    route = args.route or None
+    verbose = bool(args.verbose)
     print(
-        f"ai-chat — user: {cfg.user_id}  mode: {cfg.mode}" + (f"  model: {cfg.model}" if cfg.model else ""),
+        f"ai-chat — user: {cli_config.CLI_USER_ID}  mode: {mode}" + (f"  model: {cli_config.CLI_MODEL}" if cli_config.CLI_MODEL else ""),
         file=sys.stderr,
     )
     print(
@@ -194,12 +208,13 @@ def _run_repl(args: argparse.Namespace, cfg) -> int:
             text = asyncio.run(
                 _run_query(
                     query,
-                    user_id=cfg.user_id,
-                    bearer_token=cfg.bearer_token,
-                    model=cfg.model,
-                    mode=cfg.mode,
-                    route=cfg.route,
-                    verbose=cfg.verbose,
+                    user_id=cli_config.CLI_USER_ID,
+                    bearer_token=cli_config.CLI_BEARER_TOKEN or None,
+                    memory_root=cli_config.CLI_MEMORY_ROOT,
+                    model=cli_config.CLI_MODEL or None,
+                    mode=mode,
+                    route=route,
+                    verbose=verbose,
                     conversation_id=conversation_id,
                 )
             )
@@ -224,7 +239,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "Examples:\n"
             "  ai chat --once 'What is AAPL PE?'\n"
             "  ai chat --model openai/gpt-4o --verbose\n"
-            "  python -m ai.cli chat --once 'What is AAPL PE?'\n"
+            "  python -m ai.cli.main chat --once 'What is AAPL PE?'\n"
             "  ai-chat --once 'Summarise my watchlist' --user-id alice\n"
         ),
     )
@@ -234,7 +249,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--api-key",
         dest="api_key",
         metavar="KEY",
-        help="Bearer token / API key (env: YLD_JWT).",
+        help="Bearer token / API key (env: CLI_BEARER_TOKEN).",
     )
     p.add_argument("--model", metavar="MODEL", help="Model override, e.g. openai/gpt-4o.")
     p.add_argument("--mode", choices=["auto", "plan", "explain", "criticise"], default="auto")
@@ -243,9 +258,8 @@ def _build_parser() -> argparse.ArgumentParser:
         "--memory-root",
         dest="memory_root",
         metavar="DIR",
-        help="Memory root dir (env: MEMORY_ROOT).",
+        help="Memory root dir (env: CLI_MEMORY_ROOT).",
     )
-    p.add_argument("--env-file", dest="env_file", metavar="FILE", help="Path to .env file.")
     p.add_argument("--verbose", "-v", action="store_true", help="Print CoT steps to stderr.")
     return p
 
@@ -255,17 +269,15 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> None:
     """Entry point for `ai-chat`, `ai chat`, and `python -m ai.cli chat`."""
-    from ai.cli.config import resolve_config
-    from pathlib import Path
-
     parser = _build_parser()
     args = parser.parse_args(argv)
-    env_file = Path(args.env_file) if args.env_file else None
-    cfg = resolve_config(args, env_file=env_file)
+
+    # Override config with CLI args
+    _apply_config_overrides(args)
 
     if args.once is not None:
-        code = _run_once(args, cfg)
+        code = _run_once(args)
     else:
-        code = _run_repl(args, cfg)
+        code = _run_repl(args)
 
     raise SystemExit(code)

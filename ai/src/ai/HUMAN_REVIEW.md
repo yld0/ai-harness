@@ -14,3 +14,10 @@
 
 
 - a post hook for quotes from superinvestors 
+
+
+
+## Manual testing
+- commands
+- check clients
+- check automations

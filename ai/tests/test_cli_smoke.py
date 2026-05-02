@@ -6,6 +6,7 @@ All LLM calls use DEV_ECHO_MODE=echo for determinism.
 
 from __future__ import annotations
 
+import argparse
 import subprocess
 import sys
 from pathlib import Path
@@ -21,6 +22,8 @@ _BASE_ENV = {
     **_os.environ,
     "PYTHONPATH": _SRC,
     "DEV_ECHO_MODE": "true",
+    "AUTH_SECRETPHRASE": "test-secret",
+    "SECRET_KEY": "test-secret-key",
     # Suppress optional heavy-dep warnings
     "PYTHONWARNINGS": "ignore",
 }
@@ -29,7 +32,7 @@ _BASE_ENV = {
 def _run(*args: str, extra_env: dict | None = None, **kw) -> subprocess.CompletedProcess:
     env = {**_BASE_ENV, **(extra_env or {})}
     return subprocess.run(
-        [_PYTHON, "-m", "ai.cli", *args],
+        [_PYTHON, "-m", "ai.cli.main", *args],
         capture_output=True,
         text=True,
         env=env,
@@ -203,65 +206,123 @@ async def test_cli_progress_sink_unknown_event_silent():
 # ─── Config resolution ────────────────────────────────────────────────────────
 
 
-def test_resolve_config_defaults():
-    import types
-    from ai.cli.config import resolve_config
-
-    args = types.SimpleNamespace(
-        user_id=None,
-        api_key=None,
-        memory_root=None,
-        model=None,
-        mode="auto",
-        route=None,
-        verbose=False,
-        env_file=None,
-    )
-    cfg = resolve_config(args)
-    assert cfg.user_id == "cli-user"
-    assert cfg.mode == "auto"
-    assert cfg.verbose is False
+def _cli_args(**overrides) -> argparse.Namespace:
+    values = {
+        "user_id": None,
+        "api_key": None,
+        "memory_root": None,
+        "model": None,
+        "mode": "auto",
+        "route": None,
+        "verbose": False,
+    }
+    values.update(overrides)
+    return argparse.Namespace(**values)
 
 
-def test_resolve_config_cli_args_take_precedence(monkeypatch):
-    import types
-    from ai.cli.config import resolve_config
+def _set_required_config_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AUTH_SECRETPHRASE", "test-secret")
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key")
 
-    monkeypatch.setenv("CLI_USER_ID", "env-user")
-    args = types.SimpleNamespace(
+
+def _reset_cli_config() -> None:
+    from ai.config import cli_config
+
+    cli_config.CLI_USER_ID = "cli-user"
+    cli_config.CLI_BEARER_TOKEN = ""
+    cli_config.CLI_MEMORY_ROOT = "./memory"
+    cli_config.CLI_MODEL = ""
+
+
+def test_apply_config_overrides_defaults(monkeypatch):
+    from ai.cli.chat import _apply_config_overrides
+
+    _set_required_config_env(monkeypatch)
+    _reset_cli_config()
+
+    _apply_config_overrides(_cli_args())
+    from ai.config import cli_config
+
+    assert cli_config.CLI_USER_ID == "cli-user"
+    assert cli_config.CLI_BEARER_TOKEN == ""
+    assert cli_config.CLI_MEMORY_ROOT == "./memory"
+    assert cli_config.CLI_MODEL == ""
+
+
+def test_apply_config_overrides_cli_args_take_precedence(monkeypatch):
+    from ai.cli.chat import _apply_config_overrides
+
+    _set_required_config_env(monkeypatch)
+    _reset_cli_config()
+    args = _cli_args(
         user_id="cli-user-override",
         api_key="tok",
-        memory_root=None,
+        memory_root="cli-memory",
         model="gpt-4o",
         mode="plan",
-        route=None,
         verbose=True,
-        env_file=None,
     )
-    cfg = resolve_config(args)
-    assert cfg.user_id == "cli-user-override"
-    assert cfg.model == "gpt-4o"
-    assert cfg.mode == "plan"
-    assert cfg.bearer_token == "tok"
-    assert cfg.verbose is True
+
+    _apply_config_overrides(args)
+    from ai.config import cli_config
+
+    assert cli_config.CLI_USER_ID == "cli-user-override"
+    assert cli_config.CLI_BEARER_TOKEN == "tok"
+    assert cli_config.CLI_MEMORY_ROOT == "cli-memory"
+    assert cli_config.CLI_MODEL == "gpt-4o"
 
 
-def test_resolve_config_env_fallback(monkeypatch):
-    import types
-    from ai.cli.config import resolve_config
-
-    monkeypatch.setenv("CLI_USER_ID", "from-env")
-    monkeypatch.setenv("YLD_JWT", "jwt-tok")
-    args = types.SimpleNamespace(
-        user_id=None,
-        api_key=None,
-        memory_root=None,
-        model=None,
-        mode="auto",
-        route=None,
-        verbose=False,
-        env_file=None,
+def test_cli_config_env_defaults_load_at_import_time():
+    script = (
+        "import argparse\n"
+        "from ai.cli.chat import _apply_config_overrides\n"
+        "_apply_config_overrides(argparse.Namespace(user_id=None, api_key=None, memory_root=None, model=None))\n"
+        "from ai.config import cli_config\n"
+        "assert cli_config.CLI_USER_ID == 'from-env'\n"
+        "assert cli_config.CLI_BEARER_TOKEN == 'env-token'\n"
+        "assert cli_config.CLI_MEMORY_ROOT == 'env-memory'\n"
+        "assert cli_config.CLI_MODEL == 'env-model'\n"
     )
-    cfg = resolve_config(args)
-    assert cfg.user_id == "from-env"
-    assert cfg.bearer_token == "jwt-tok"
+    result = subprocess.run(
+        [_PYTHON, "-c", script],
+        capture_output=True,
+        text=True,
+        env={
+            **_BASE_ENV,
+            "AUTH_SECRETPHRASE": "test-secret",
+            "SECRET_KEY": "test-secret-key",
+            "CLI_USER_ID": "from-env",
+            "CLI_BEARER_TOKEN": "env-token",
+            "CLI_MEMORY_ROOT": "env-memory",
+            "CLI_MODEL": "env-model",
+        },
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_apply_config_overrides_does_not_use_legacy_env_fallbacks(monkeypatch):
+    from ai.cli.chat import _apply_config_overrides
+
+    _set_required_config_env(monkeypatch)
+    _reset_cli_config()
+    monkeypatch.setenv("YLD_USER_ID", "legacy-user")
+    monkeypatch.setenv("YLD_JWT", "legacy-token")
+    monkeypatch.setenv("API_KEY", "legacy-api-key")
+
+    _apply_config_overrides(_cli_args())
+    from ai.config import cli_config
+
+    assert cli_config.CLI_USER_ID == "cli-user"
+    assert cli_config.CLI_BEARER_TOKEN == ""
+
+
+def test_apply_config_overrides_updates_agent_memory_root(monkeypatch):
+    from ai.cli.chat import _apply_config_overrides
+
+    _set_required_config_env(monkeypatch)
+    _reset_cli_config()
+    _apply_config_overrides(_cli_args(memory_root="cli-memory"))
+    from ai.config import agent_config
+
+    assert agent_config.MEMORY_ROOT == "cli-memory"

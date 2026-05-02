@@ -1,25 +1,27 @@
-"""Top-level CLI (`ai` console script, ``python -m ai.cli``).
+"""
+Top-level CLI (`ai` console script, ``python -m ai.cli.main``).
 
 Dispatches to subcommands:
   chat    — interactive REPL or --once single-shot
 
 Usage:
   ai chat [options]
-  python -m ai.cli chat [options]
-  python -m ai.cli chat --once "What is AAPL PE?"
+  python -m ai.cli.main chat [options]
+  python -m ai.cli.main chat --once "What is AAPL PE?"
 """
 
 from __future__ import annotations
 
 import argparse
-import sys
+
+from ai.cli.chat import main as chat_main
 
 
 def main() -> None:
     top = argparse.ArgumentParser(
         prog="ai",
         description="AI harness agent — standalone CLI.",
-        epilog="Run `ai <command> --help` or `python -m ai.cli <command> --help` for subcommand help.",
+        epilog="Run `ai <command> --help` or `python -m ai.cli.main <command> --help` for subcommand help.",
     )
     subs = top.add_subparsers(dest="command", metavar="COMMAND")
     subs.add_parser("chat", help="Start an agent chat session.", add_help=False)
@@ -29,8 +31,6 @@ def main() -> None:
     first, remainder = top.parse_known_args()
 
     if first.command == "chat":
-        from ai.cli.chat import main as chat_main
-
         chat_main(remainder)
     else:
         top.print_help()

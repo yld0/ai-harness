@@ -7,14 +7,13 @@ callers never construct raw query strings outside this module.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from ai.tools.graphql import GraphqlClient
+from ai.clients.transport import GraphqlClient
 
 logger = logging.getLogger(__name__)
 
-_CAPTURE_USAGE_MUTATION = """
+CAPTURE_USAGE_MUTATION = """
 mutation CaptureUsage($input: UsageCaptureInput!) {
   ai_captureUsage(input: $input)
 }
@@ -24,13 +23,9 @@ mutation CaptureUsage($input: UsageCaptureInput!) {
 class AIClient:
     """Client for the ``ai_*`` GraphQL namespace."""
 
-    def __init__(self, client: GraphqlClient | None = None) -> None:
-        # Lazy import to keep this module importable without tools/ on path.
-        if client is None:
-            from ai.tools.graphql import GraphqlClient as _GQL
-
-            client = _GQL()
-        self._gql = client
+    def __init__(self, transport: GraphqlClient | None = None) -> None:
+        """Initialize the client with an optional GraphQL transport override."""
+        self.transport = transport or GraphqlClient()
 
     async def capture_usage(
         self,
@@ -68,8 +63,8 @@ class AIClient:
             model_id,
             total_tokens,
         )
-        data = await self._gql.execute(
-            _CAPTURE_USAGE_MUTATION,
+        data = await self.transport.execute(
+            CAPTURE_USAGE_MUTATION,
             variables=variables,
             bearer_token=bearer_token,
         )

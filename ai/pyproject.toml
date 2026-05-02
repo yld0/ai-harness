@@ -29,7 +29,7 @@ discord = ["discord.py>=2.3.0"]
 mcp = ["mcp>=1.0.0"]
 
 [project.scripts]
-ai = "ai.cli.__main__:main"
+ai = "ai.cli.main:main"
 ai-chat = "ai.cli.chat:main"
 
 [build-system]

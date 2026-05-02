@@ -40,7 +40,7 @@ def test_websocket_auth_via_first_message(monkeypatch) -> None:
             websocket.send_json({"type": "authenticate", "token": token("user-1")})
             assert websocket.receive_json() == {
                 "type": "auth_ok",
-                "message": "Authenticated",
+                "payload": {"message": "Authenticated"},
             }
 
             websocket.send_json(ws_payload())
@@ -55,8 +55,8 @@ def test_websocket_auth_via_first_message(monkeypatch) -> None:
     assert "task_progress_summary" in types
     assert types.index("usage") < types.index("task_progress_summary")
     assert final["type"] == "chat_response"
-    assert final["data"]["conversationID"] == "ws-conversation"
-    assert final["data"]["metadata"]["user_id"] == "user-1"
+    assert final["payload"]["data"]["conversationID"] == "ws-conversation"
+    assert final["payload"]["data"]["metadata"]["user_id"] == "user-1"
 
 
 def test_websocket_auth_via_header(monkeypatch) -> None:
@@ -73,7 +73,7 @@ def test_websocket_auth_via_header(monkeypatch) -> None:
     assert events[0]["type"] == "conversation_id"
     assert "cot_step" in [e["type"] for e in events]
     assert final["type"] == "chat_response"
-    assert final["data"]["metadata"]["user_id"] == "user-2"
+    assert final["payload"]["data"]["metadata"]["user_id"] == "user-2"
 
 
 def test_websocket_reuses_first_message_auth_for_multiple_turns(monkeypatch) -> None:
@@ -91,11 +91,11 @@ def test_websocket_reuses_first_message_auth_for_multiple_turns(monkeypatch) -> 
             _, second = _collect_until_chat(websocket)
 
     assert first["type"] == "chat_response"
-    assert first["data"]["conversationID"] == "ws-conversation-1"
-    assert first["data"]["metadata"]["user_id"] == "user-1"
+    assert first["payload"]["data"]["conversationID"] == "ws-conversation-1"
+    assert first["payload"]["data"]["metadata"]["user_id"] == "user-1"
     assert second["type"] == "chat_response"
-    assert second["data"]["conversationID"] == "ws-conversation-2"
-    assert second["data"]["metadata"]["user_id"] == "user-1"
+    assert second["payload"]["data"]["conversationID"] == "ws-conversation-2"
+    assert second["payload"]["data"]["metadata"]["user_id"] == "user-1"
 
 
 def test_websocket_allows_valid_auth_after_consecutive_auth_failures(monkeypatch) -> None:
@@ -119,7 +119,7 @@ def test_websocket_allows_valid_auth_after_consecutive_auth_failures(monkeypatch
             _, final = _collect_until_chat(websocket)
 
     assert final["type"] == "chat_response"
-    assert final["data"]["metadata"]["user_id"] == "user-1"
+    assert final["payload"]["data"]["metadata"]["user_id"] == "user-1"
 
 
 def test_websocket_closes_after_bad_post_auth_message(monkeypatch) -> None:

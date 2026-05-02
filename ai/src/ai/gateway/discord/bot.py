@@ -1,4 +1,5 @@
-"""Discord gateway bot — stub implementation.
+"""
+Discord gateway bot — stub implementation.
 
 The full Discord integration (using ``discord.py``) is tracked in FUTURE.md.
 This stub allows the module to be imported without errors and raises
@@ -22,17 +23,17 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-_NOT_IMPLEMENTED_MSG = "Discord gateway is not yet implemented. " "See FUTURE.md for the planned discord.py-based integration."
+NOT_IMPLEMENTED_MSG = "Discord gateway is not yet implemented. " "See FUTURE.md for the planned discord.py-based integration."
 
 
 class DiscordBot:
-    """Stub Discord bot — raises ``NotImplementedError`` on ``start()``."""
+    """ Stub Discord bot — raises ``NotImplementedError`` on ``start()``. """
 
     def __init__(self, **kwargs) -> None:  # accept any kwargs for future compat
-        logger.warning("DiscordBot: %s", _NOT_IMPLEMENTED_MSG)
+        logger.warning("DiscordBot: %s", NOT_IMPLEMENTED_MSG)
 
     def start(self) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_MSG)
+        raise NotImplementedError(NOT_IMPLEMENTED_MSG)
 
     async def start_async(self) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_MSG)
+        raise NotImplementedError(NOT_IMPLEMENTED_MSG)

@@ -1,9 +1,14 @@
-"""WebSocket wire helpers: event shapes for progress streaming (Phase 7)."""
+""" WebSocket wire helpers: event shapes for progress streaming. """
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Any
+
+from ai.schemas.agent import ChatResponse, TaskUpdateMessage
+
+logger = logging.getLogger(__name__)
 
 
 def utc_ts() -> str:
@@ -11,17 +16,18 @@ def utc_ts() -> str:
 
 
 def event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
-    """One server→client progress frame: { type, payload }."""
+    """
+    One server→client progress frame: { type, payload }.
+    
+    Args:
+        event_type: The event type.
+        payload: The event payload.
+    """
     return {"type": event_type, "payload": payload}
 
 
 def auth_ok_message() -> dict[str, Any]:
-    return {"type": "auth_ok", "message": "Authenticated"}
-
-
-def auth_ok_legacy_alias() -> dict[str, Any]:
-    """Optional legacy `authentication` name (same body style as WsAuthResponse)."""
-    return {"type": "authentication", "message": "Authenticated"}
+    return event("auth_ok", {"message": "Authenticated"})
 
 
 def conversation_id_event(conversation_id: str) -> dict[str, Any]:
@@ -94,4 +100,14 @@ def error_event(*, code: str, message: str, retryable: bool = False) -> dict[str
 
 
 def chat_response_event(data: dict[str, Any]) -> dict[str, Any]:
-    return {"type": "chat_response", "data": data}
+    return event("chat_response", {"data": data})
+
+
+async def send_ws_partial(response: ChatResponse) -> None:
+    """ No-op stub; real WebSocket push is wired when the llm-council route handler lands. """
+    logger.debug("send_ws_partial stub invoked")
+
+
+async def send_ws_task_update(task: TaskUpdateMessage) -> None:
+    """ No-op stub; real WebSocket push is wired when the llm-council route handler lands. """
+    logger.debug("send_ws_task_update stub invoked task_id=%s items=%d", task.task_id, len(task.items))

@@ -70,9 +70,5 @@ async def get_current_user(request: Request, authorization: str | None = Header(
     return user
 
 
-def websocket_authorization(websocket: WebSocket) -> str | None:
-    return websocket.headers.get("authorization")
-
-
 def websocket_auth_error(message: str) -> dict[str, Any]:
     return {"error": {"code": AUTH_ERROR_CODE, "message": message}}

@@ -111,25 +111,77 @@ class MCPConfig:
 
 @register
 @dataclass
+class HealthConfig:
+    """Optional liveness dependency probe settings for ``/healthz``."""
+
+    HEALTHZ_PROBE_DEPS: bool = item(
+        default=False,
+        description="When True, attempt lightweight HTTP reachability checks against configured dependency URLs",
+    )
+    GRAPHQL_HEALTH_URL: str = item(
+        default="http://66.135.26.112/api/graphql", # TODO: Expose actual health endpoint
+        description="URL for GraphQL service health probe",
+    )
+    GEMINI_HEALTH_URL: str = item(
+        default="",
+        description="URL for Gemini health probe; empty disables the probe",
+    )
+    OPENROUTER_HEALTH_URL: str = item(
+        default="https://openrouter.ai/healthz",
+        description="URL for OpenRouter health probe",
+    )
+    FMP_HEALTH_URL: str = item(
+        default="https://financialmodelingprep.com",
+        description="URL for Financial Modeling Prep health probe",
+    )
+
+
+@register
+@dataclass
+class AutomationConfig:
+    """Automation-run settings."""
+
+    AUTOMATION_REPLAY_TTL_SECONDS: int = item(
+        default=3600,
+        description="TTL in seconds for in-process idempotency replay cache keyed by (user_id, automation_run_id)",
+    )
+
+
+@register
+@dataclass
 class CouncilConfig:
     """LLM Council configuration."""
 
-    COUNCIL_MODELS: str = item(
-        default="openai/gpt-4o,anthropic/claude-sonnet-4-5,google/gemini-2.0-flash-001",
-        description="Comma-separated OpenRouter model IDs for council panelists",
+    OPENROUTER_API_KEY: str = item(default="", description="OpenRouter API key for council models")
+    COUNCIL_MODELS: List[str] = item(
+        default_factory=lambda: [
+            "openai/gpt-5.1",
+            "google/gemini-3-pro-preview",
+            "anthropic/claude-sonnet-4.5",
+            "x-ai/grok-4",
+            "moonshotai/kimi-k2-thinking",
+        ],
+        description="Council member models (OpenRouter identifiers)",
     )
-    COUNCIL_CHAIRMAN_MODEL: str = item(
-        default="anthropic/claude-sonnet-4-5",
-        description="Model used as judge/chairman to synthesise the final answer",
+    CHAIRMAN_MODEL: str = item(
+        default="google/gemini-3-flash-preview",
+        description="Chairman model for final synthesis",
     )
-    COUNCIL_INCLUDE_RANKINGS: str = item(
-        default="1",
-        description="When 1/true, run Stage 2 peer ranking before synthesis",
+    OPENROUTER_API_URL: str = item(
+        default="https://openrouter.ai/api/v1/chat/completions",
+        description="OpenRouter API endpoint",
     )
-    COUNCIL_TIMEOUT_S: float = item(
-        default=120.0,
-        description="Per-model HTTP timeout for council queries (seconds)",
-    )
+
+
+@register
+@dataclass
+class CliConfig:
+    """Standalone CLI environment configuration."""
+
+    CLI_USER_ID: str = item(default="cli-user", description="Default user id for standalone CLI sessions")
+    CLI_BEARER_TOKEN: str = item(default="", description="Bearer token forwarded from the CLI to GraphQL-backed tools")
+    CLI_MEMORY_ROOT: str = item(default="./memory", description="Path to the PARA memory root directory for CLI sessions")
+    CLI_MODEL: str = item(default="", description="Default model override for standalone CLI sessions")
 
 
 @register
@@ -169,7 +221,10 @@ redis_config = load(RedisConfig)
 urlmeta_config = load(URLMetaConfig)
 telemetry_config = load(TelemetryConfig)
 mcp_config = load(MCPConfig)
+health_config = load(HealthConfig)
+automation_config = load(AutomationConfig)
 council_config = load(CouncilConfig)
+cli_config = load(CliConfig)
 log_config = load(LoggingConfig)
 agent_config = load(AgentConfig)
 agent_config.AI_FALLBACK_MODELS = (

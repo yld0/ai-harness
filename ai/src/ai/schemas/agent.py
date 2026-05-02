@@ -274,6 +274,17 @@ class CouncilResponse(CamelBaseModel):
     stage3: CouncilStageItem = Field(default=None, description="The council stage 3 item.")
 
 
+class CouncilRunResult(CamelBaseModel):
+    """ Version-agnostic council run output. Produced by ai.council.runner.run_council. """
+
+    version: Literal["v1", "v2"]
+    stage1: List[CouncilStageItem] = Field(default_factory=list)
+    stage2: List[CouncilRankingItem] = Field(default_factory=list)
+    stage3: Optional[CouncilStageItem] = Field(default=None, description="Chairman synthesis; None if synthesis failed.")
+    aggregate_rankings: List[AggregateRanking] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
 class ChatContext(CamelBaseModel):
     """
     LLM and agent context.

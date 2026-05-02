@@ -32,7 +32,7 @@ def _stub_provider(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-async def receive_json_with_idle_timeout_for_tests(websocket):
+async def receive_json_with_idle_timeout_for_tests(websocket, client_id: str, timeout: float | None = None):
     return await websocket.receive_json()
 
 

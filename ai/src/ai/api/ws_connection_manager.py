@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from typing import Optional
 from dataclasses import dataclass, field
 
 import httpx
@@ -17,7 +18,6 @@ from ai.api.auth import (
     decode_token,
     token_from_authorization,
     websocket_auth_error,
-    websocket_authorization,
 )
 from ai.api.send import auth_ok_message
 from ai.clients.user import UserClient
@@ -42,12 +42,31 @@ class WebSocketState:
     hook_tasks: set[asyncio.Task[None]] = field(default_factory=set)
 
 
+async def receive_json_with_idle_timeout(websocket: WebSocket, client_id: str, timeout: Optional[float] = None) -> object:
+    """ Receive one JSON frame, enforcing the configured websocket idle timeout.
+    
+    Args:
+        websocket: The WebSocket connection.
+        client_id: The client ID.
+        timeout: The timeout in seconds.
+    """
+    try:
+        return await asyncio.wait_for(
+            websocket.receive_json(),
+            timeout=timeout or config.WS_IDLE_TIMEOUT_SECONDS,
+        )
+    except asyncio.TimeoutError:
+        logger.info("websocket idle timeout (client_id=%s)", client_id)
+        await close_websocket(websocket, code=1001, reason="idle timeout")
+        raise
+
+
 class WSConnectionManager:
-    """Lifecycle for per-connection ``WebSocketState`` (auth + best-effort metadata)."""
+    """ Lifecycle for per-connection ``WebSocketState`` (auth + best-effort metadata). """
 
     async def authenticate(self, websocket: WebSocket, client_id: str) -> WebSocketState | None:
         """Authenticate via ``Authorization`` header or retryable first-message auth."""
-        header = websocket_authorization(websocket)
+        header = websocket.headers.get("authorization")
         if header:
             try:
                 token = token_from_authorization(header)
@@ -62,7 +81,7 @@ class WSConnectionManager:
         max_failures = max(1, config.WS_MAX_AUTH_FAILURES)
         while failures < max_failures:
             try:
-                raw = await receive_json_with_idle_timeout(websocket)
+                raw = await receive_json_with_idle_timeout(websocket, client_id)
                 auth = WsAuthRequest.model_validate(raw)
                 user = decode_token(auth.token)
             except asyncio.TimeoutError:
@@ -89,7 +108,7 @@ class WSConnectionManager:
         return None
 
     async def disconnect(self, state: WebSocketState) -> None:
-        """Drain per-connection background work and cancel best-effort metadata lookup."""
+        """ Drain per-connection background work and cancel best-effort metadata lookup. """
         await drain_hook_tasks(state)
 
         task = state._resolve_task
@@ -102,7 +121,7 @@ class WSConnectionManager:
             pass
 
     def _attach(self, client_id: str, user: AuthenticatedUser, bearer_token: str) -> WebSocketState:
-        """Create a ``WebSocketState`` and kick off the best-effort ``resolve_superuser`` lookup."""
+        """ Create a ``WebSocketState`` and kick off the best-effort ``resolve_superuser`` lookup. """
         state = WebSocketState(
             client_id=client_id,
             user_id=user.user_id,
@@ -113,7 +132,7 @@ class WSConnectionManager:
 
 
 async def resolve_superuser(state: WebSocketState) -> None:
-    """Best-effort lookup of ``isSuperuser``; transient failures leave the default ``False``."""
+    """ Best-effort lookup of ``isSuperuser``; transient failures leave the default ``False``. """
     try:
         data = await UserClient().fetch_me(state.bearer_token)
     except (httpx.HTTPStatusError, httpx.RequestError, RuntimeError):
@@ -123,16 +142,20 @@ async def resolve_superuser(state: WebSocketState) -> None:
 
 
 async def reject(websocket: WebSocket, message: str, *, code: int = 4401) -> None:
-    """Send a ``websocket_auth_error`` frame and close with ``code`` (default 4401)."""
+    """ Send a ``websocket_auth_error`` frame and close with ``code`` (default 4401). """
     await websocket.send_json(websocket_auth_error(message))
     await close_websocket(websocket, code=code)
 
 
-
-
-
 async def close_websocket(websocket: WebSocket, *, code: int = 1000, reason: str | None = None) -> None:
-    """Close a websocket, ignoring duplicate-close races during cleanup."""
+    """
+    Close a websocket, ignoring duplicate-close races during cleanup.
+    
+    Args:
+        websocket: The WebSocket connection.
+        code: The close code.
+        reason: The close reason.
+    """
     try:
         if reason is None:
             await websocket.close(code=code)
@@ -143,7 +166,12 @@ async def close_websocket(websocket: WebSocket, *, code: int = 1000, reason: str
 
 
 async def drain_hook_tasks(state: WebSocketState) -> None:
-    """Give post-response hook tasks a short graceful drain before cancellation."""
+    """
+    Give post-response hook tasks a short graceful drain before cancellation.
+    
+    Args:
+        state: The WebSocket state.
+    """
     tasks = {task for task in state.hook_tasks if not task.done()}
     if not tasks:
         return
@@ -165,29 +193,3 @@ async def drain_hook_tasks(state: WebSocketState) -> None:
     await asyncio.gather(*pending, return_exceptions=True)
 
 
-def schedule_post_response_hooks(
-    state: WebSocketState,
-    hook_runner: HookRunner,
-    turn: AgentTurnResult,
-) -> None:
-    """Schedule post-response hooks for a completed turn on this connection."""
-    hctx = build_hook_context(
-        user_id=turn.user_id,
-        conversation_id=turn.response.conversation_id,
-        user_message=turn.user_message,
-        response_text=turn.response.response.text,  # type: ignore[union-attr]
-        request=turn.request,
-        messages=turn.messages,
-        turn_index=turn.turn_index,
-    )
-    task = asyncio.create_task(run_post_response_hooks(hook_runner, hctx, state.client_id))
-    state.hook_tasks.add(task)
-    task.add_done_callback(state.hook_tasks.discard)
-
-
-async def run_post_response_hooks(hook_runner: HookRunner, hctx: HookContext, client_id: str) -> None:
-    """Run post-response hooks without writing late errors to the websocket."""
-    try:
-        await hook_runner.run_after_response(hctx)
-    except Exception:  # noqa: BLE001
-        logger.exception("post-response hooks failed for client_id=%s", client_id)
