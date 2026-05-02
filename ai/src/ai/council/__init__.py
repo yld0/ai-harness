@@ -1,1 +1,1 @@
-"""LLM Council implementations."""
+""" LLM Council implementations. """

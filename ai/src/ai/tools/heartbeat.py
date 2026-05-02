@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any, ClassVar
 
-from ai.tools.base import Tool, ToolResult, ok_result
+from ai.tools._base import Tool, ToolResult, ok_result
 from ai.tools.context import ToolContext
 
 _DEFAULT_WAIT_S = 0.0

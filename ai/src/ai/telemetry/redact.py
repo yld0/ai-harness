@@ -1,4 +1,4 @@
-"""Shared redaction for Sentry, PostHog, and Langfuse captures."""
+""" Shared redaction for Sentry, PostHog, and Langfuse captures. """
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import hashlib
 import os
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Literal, TypedDict
 
 _EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 _AUTH_LINE_RE = re.compile(r"(?i)\bauthorization\s*:\s*(bearer\s+)?[^\s\r\n]+")
@@ -25,6 +25,12 @@ _EXACT_SENSITIVE_KEYS = frozenset(
         "client_secret",
     )
 )
+
+
+class _RedactedLargeString(TypedDict):
+    _redacted: Literal[True]
+    len: int
+    sha256_16: str
 
 
 @dataclass(frozen=True)
@@ -47,7 +53,7 @@ def redact_settings_from_env() -> RedactSettings:
 
 
 def scrub_secrets_str(value: str) -> str:
-    """Remove emails and Authorization patterns (always, regardless of redact flags)."""
+    """ Remove emails and Authorization patterns (always, regardless of redact flags). """
     s = _EMAIL_RE.sub("[email_redacted]", value)
     s = _AUTH_LINE_RE.sub("Authorization: [redacted]", s)
     return s
@@ -55,21 +61,28 @@ def scrub_secrets_str(value: str) -> str:
 
 def _is_sensitive_key(key: str) -> bool:
     lower = key.lower().replace("-", "_")
-    if lower in _EXACT_SENSITIVE_KEYS:
-        return True
-    return lower.endswith("_secret") or lower.endswith("_password") or lower.endswith("_token")
+    return (
+        lower in _EXACT_SENSITIVE_KEYS
+        or lower.endswith("_secret")
+        or lower.endswith("_password")
+        or lower.endswith("_token")
+    )
 
 
-def _redact_scalar_str(s: str, *, content_redact: bool) -> str | dict[str, Any]:
+def _redact_scalar_str(s: str, *, content_redact: bool) -> str | _RedactedLargeString:
     cleaned = scrub_secrets_str(s)
     if not content_redact or len(cleaned) < 32:
         return cleaned
     digest = hashlib.sha256(cleaned.encode("utf-8", errors="replace")).hexdigest()
-    return {"_redacted": True, "len": len(cleaned), "sha256_16": digest[:16]}
+    return {
+        "_redacted": True,
+        "len": len(cleaned),
+        "sha256_16": digest[:16],
+    }
 
 
-def redact_value(value: Any, settings: RedactSettings, *, mode: str) -> Any:
-    """Redact a JSON-like structure.
+def redact_value(value: object, settings: RedactSettings, *, mode: str) -> object:
+    """ Redact a JSON-like structure.
 
     ``mode``:
       - ``prompt`` — apply ``TELEMETRY_REDACT_PROMPTS`` to string payloads.
@@ -86,7 +99,7 @@ def redact_value(value: Any, settings: RedactSettings, *, mode: str) -> Any:
     return _walk(value, content_redact=content_redact)
 
 
-def _walk(value: Any, *, content_redact: bool) -> Any:
+def _walk(value: object, *, content_redact: bool) -> object:
     if value is None or isinstance(value, bool):
         return value
     if isinstance(value, int | float):
@@ -94,7 +107,7 @@ def _walk(value: Any, *, content_redact: bool) -> Any:
     if isinstance(value, str):
         return _redact_scalar_str(value, content_redact=content_redact)
     if isinstance(value, dict):
-        out: dict[Any, Any] = {}
+        out: dict[object, object] = {}
         for k, v in value.items():
             sk = str(k)
             if _is_sensitive_key(sk):

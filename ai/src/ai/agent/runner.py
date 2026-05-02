@@ -41,7 +41,7 @@ from ai.schemas.agent import (
 from ai.context import BEARER_TOKEN, CONVERSATION_ID, REQUEST_ID
 from ai.tools.context import ToolContext, reset_tool_context, set_tool_context
 from ai.tools.registry import list_openai_tools, register_tools
-from ai.telemetry import capture_event
+from ai.telemetry.posthog import capture_event
 from ai.telemetry.langfuse import (
     LangfuseProviderWrapper,
     LangfuseToolRegistryWrapper,

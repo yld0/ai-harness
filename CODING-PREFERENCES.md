@@ -14,6 +14,10 @@
 
 - Avoid wrapper types or duplicate config shapes when an existing config object already represents the state; pass or update the existing object directly.
 
+- only use os.env in special cases else use shared.envutil.config (config.py) for config
+
+- Simplicity & maintainable: Prioritize clarity and maintainability over cleverness.
+
 ## Process
 
 -

@@ -48,7 +48,16 @@ def ok_result(data: Any) -> ToolResult:
 
 
 class Tool(ABC):
-    """Async tool with JSON schema, permission gating, and CoT tool_start/tool_done."""
+    """
+    Async tool with JSON schema, permission gating, and CoT tool_start/tool_done.
+    
+    Args:
+        name: The name of the tool.
+        description: The description of the tool.
+        required_permission: The permission required to use the tool.
+        hidden_channels: The channels on which the tool is not available.
+        file_component_risk: Whether the tool is risky to use on file components.
+    """
 
     name: ClassVar[str]
     description: ClassVar[str]

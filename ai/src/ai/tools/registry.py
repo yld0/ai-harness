@@ -7,7 +7,7 @@ from typing import Any
 from ai.agent.loop import ToolRegistry
 from ai.agent.prompt_builder import Channel
 from ai.tools.ask_user import AskUserTool
-from ai.tools.base import OpenAIFunctionDef, Tool
+from ai.tools._base import OpenAIFunctionDef, Tool
 from ai.tools.fmp import FmpGetQuote
 from ai.tools.grep import GrepTool
 from ai.tools.heartbeat import HeartbeatTool

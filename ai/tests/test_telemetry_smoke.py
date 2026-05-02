@@ -8,16 +8,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from ai.main import app
-from ai.telemetry import (
-    capture_event,
-    capture_exception,
-    init_langfuse,
-    init_posthog,
-    init_sentry,
-    reset_langfuse_client,
-    reset_posthog_client,
-    setup_telemetry,
-)
+from ai.telemetry import setup_telemetry
+from ai.telemetry.langfuse import init_langfuse, reset_langfuse_client
+from ai.telemetry.posthog import capture_event, init_posthog, reset_posthog_client
+from ai.telemetry.sentry import capture_exception, init_sentry
 
 
 @pytest.fixture(autouse=True)

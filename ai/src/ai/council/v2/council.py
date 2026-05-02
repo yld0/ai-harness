@@ -8,6 +8,7 @@ from ai.council.base import (
     QueryParallel,
     build_chairman_prompt,
     build_ranking_prompt,
+    default_query_parallel,
 )
 from ai.schemas.agent import (
     AggregateRanking,
@@ -34,7 +35,7 @@ class V2Council(BaseCouncilVersion):
     judge_failed_text = "Error: Unable to generate final synthesis."
 
     def __init__(self, query_parallel: QueryParallel | None = None) -> None:
-        super().__init__(query_parallel=query_parallel)
+        self.query_parallel = query_parallel or default_query_parallel
         self.task_s1 = TaskUpdateMessage(task_id="stage1", default_open=True, title="Stage 1: Collecting responses", items=[])
         self.task_s2 = TaskUpdateMessage(task_id="stage2", default_open=True, title="Stage 2: Peer rankings", items=[])
         self.task_s3 = TaskUpdateMessage(task_id="stage3", default_open=True, title="Stage 3: Final synthesis", items=[])

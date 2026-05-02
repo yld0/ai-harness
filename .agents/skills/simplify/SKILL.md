@@ -40,6 +40,8 @@ Do a mechanical clean-up pass on the target file(s) or selection. Apply only the
 5. **Import hygiene** — sort and de-duplicate imports; no imports inside functions (per project rules).
 6. **Docstrings** — ensure padded delimiters (`""" text. """`) per project rules; remove docstrings that just restate the function signature.
 
+Ensure tests work afterwards
+
 ## Constraints
 
 - Match the surrounding file's style — do not impose a different style from elsewhere in the repo.

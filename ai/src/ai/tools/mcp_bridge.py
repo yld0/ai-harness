@@ -22,7 +22,7 @@ from typing import Any
 
 from ai.mcp.config import MCPServerConfig, load_mcp_config
 from ai.mcp.client import MCPClient, MCPToolDef
-from ai.tools.base import Tool, ToolResult, err_result, ok_result
+from ai.tools._base import Tool, ToolResult, err_result, ok_result
 from ai.tools.context import ToolContext
 from ai.tools.permissions import PermissionMode
 
@@ -37,7 +37,7 @@ def mcp_tool_name(server_name: str, tool_name: str) -> str:
 
 
 class MCPToolBridge(Tool):
-    """Adapts a single MCP tool to the internal :class:`~ai.tools.base.Tool` interface.
+    """Adapts a single MCP tool to the internal :class:`~ai.tools._base.Tool` interface.
 
     Instance attributes override the class-level ``ClassVar`` annotations because
     MCP tool names/descriptions are dynamic (discovered at runtime, not coded as

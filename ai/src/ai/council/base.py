@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -13,6 +14,9 @@ from ai.schemas.agent import AggregateRanking, CouncilRankingItem, CouncilRunRes
 
 CouncilVersionName = Literal["v1", "v2"]
 QueryParallel = Callable[[Sequence[str], list[dict[str, str]]], Awaitable[dict[str, str | None]]]
+
+logger = logging.getLogger(__name__)
+
 
 RANKING_PROMPT = """\
 You are evaluating different responses to the following question:
@@ -152,14 +156,12 @@ def build_result(
 
 
 class BaseCouncilVersion(ABC):
-    """Template for a three-stage council implementation."""
+    """ Template for a three-stage council implementation. """
 
     version: CouncilVersionName
+
     all_panelists_failed_text = "All council panelists failed to respond."
     judge_failed_text = "Council error: judge model failed to synthesise a response."
-
-    def __init__(self, query_parallel: QueryParallel | None = None) -> None:
-        self.query_parallel = query_parallel or default_query_parallel
 
     async def run(
         self,
@@ -173,12 +175,18 @@ class BaseCouncilVersion(ABC):
         """Run the invariant council lifecycle for this version."""
         council_models = models[:no_of_council] if no_of_council is not None else models
 
+
+
+        # Stage 1: Collect stage-one opinions.
+
         await self.on_stage_start("stage1")
         opinion_responses = await self.opinions(query, council_models)
         stage1 = [CouncilStageItem(model=model, response=response) for model, response in opinion_responses.items() if response is not None]
         failed_models = [model for model, response in opinion_responses.items() if response is None]
         await self.on_opinions_done(stage1, failed_models)
+
         if not stage1:
+            logger.warning("No stage-one opinions collected, returning failed result")
             return build_result(
                 version=self.version,
                 stage1=[],
@@ -187,6 +195,13 @@ class BaseCouncilVersion(ABC):
                 final_text=self.all_panelists_failed_text,
                 metadata={"failed_models": failed_models},
             )
+
+
+
+
+
+
+
 
         stage2: list[CouncilRankingItem] = []
         label_to_model: dict[str, str] = {}
@@ -219,35 +234,33 @@ class BaseCouncilVersion(ABC):
 
     @abstractmethod
     async def opinions(self, query: str, models: list[str]) -> dict[str, str | None]:
-        """Collect stage-one opinions."""
+        """ Stage one: Collect stage-one opinions. """
+        ...
 
     @abstractmethod
     async def rank(
-        self,
-        query: str,
-        models: list[str],
-        stage1: list[CouncilStageItem],
-    ) -> dict[str, str | None]:
-        """Collect stage-two peer rankings."""
+        self, query: str, models: list[str], stage1: list[CouncilStageItem]) -> dict[str, str | None]:
+        """ Stage two: Collect stage-two peer rankings. """
+        ...
 
     @abstractmethod
     async def final_review(
-        self,
-        query: str,
-        judge_model: str,
-        stage1: list[CouncilStageItem],
-        stage2: list[CouncilRankingItem],
+        self, query: str, judge_model: str, stage1: list[CouncilStageItem], stage2: list[CouncilRankingItem],
     ) -> str | None:
-        """Collect the final judge synthesis."""
+        """ Stage three: Collect the final judge synthesis. """
+        ...
 
     async def on_stage_start(self, stage: str) -> None:
         """Hook called before each stage starts."""
 
     async def on_opinions_done(self, stage1: list[CouncilStageItem], failed_models: list[str]) -> None:
-        """Hook called after stage one finishes."""
+        """ Hook called after stage one finishes. """
+        ...
 
     async def on_rank_done(self, rankings: list[CouncilRankingItem], aggregate_rankings: list[AggregateRanking]) -> None:
-        """Hook called after stage two finishes."""
+        """ Hook called after stage two finishes. """
+        ...
 
     async def on_final_done(self, judge_model: str, final_text: str) -> None:
-        """Hook called after stage three finishes."""
+        """ Hook called after stage three finishes. """
+        ...
