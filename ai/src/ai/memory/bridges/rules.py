@@ -21,7 +21,7 @@ from typing import Any, Optional
 from ai.clients.rules import fetch_rules_snapshot
 from ai.memory.bridges.base import Bridge, PullResult, PushResult
 from ai.memory.para import ParaMemoryLayout
-from ai.tools.graphql import GraphqlClient
+from ai.clients.transport import GraphqlClient
 
 logger = logging.getLogger(__name__)
 

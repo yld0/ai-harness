@@ -51,7 +51,7 @@ class WatchlistsBridge(Bridge):
         layout: ParaMemoryLayout,
         client: Optional[Any] = None,
     ) -> PullResult:
-        from ai.tools.graphql import GraphqlClient
+        from ai.clients.transport import GraphqlClient
 
         gql: Any = client or GraphqlClient()
         try:

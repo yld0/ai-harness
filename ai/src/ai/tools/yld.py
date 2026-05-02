@@ -6,7 +6,7 @@ from typing import Any, ClassVar
 
 from ai.tools._base import Tool, ToolResult, err_result, ok_result
 from ai.tools.context import ToolContext
-from ai.tools.graphql import GraphqlClient
+from ai.clients.transport import GraphqlClient
 
 
 class YldGraphqlQuery(Tool):

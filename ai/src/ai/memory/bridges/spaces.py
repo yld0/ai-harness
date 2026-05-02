@@ -56,7 +56,7 @@ class SpacesBridge(Bridge):
         layout: ParaMemoryLayout,
         client: Optional[Any] = None,
     ) -> PullResult:
-        from ai.tools.graphql import GraphqlClient
+        from ai.clients.transport import GraphqlClient
 
         gql: Any = client or GraphqlClient()
         try:
@@ -99,7 +99,7 @@ class SpacesBridge(Bridge):
         space_id = file_path.parent.name
         content = file_path.read_text(encoding="utf-8")
 
-        from ai.tools.graphql import GraphqlClient
+        from ai.clients.transport import GraphqlClient
 
         gql: Any = client or GraphqlClient()
         try:

@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from ai.rules.models import Rule, RulesSnapshot
-from ai.tools.graphql import GraphqlClient
+from ai.clients.transport import GraphqlClient
 
 logger = logging.getLogger(__name__)
 

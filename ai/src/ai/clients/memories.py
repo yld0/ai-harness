@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ai.tools.graphql import GraphqlClient
+from ai.clients.transport import GraphqlClient
 
 logger = logging.getLogger(__name__)
 
