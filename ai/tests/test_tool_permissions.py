@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from ai.agent.progress import CollectingProgressSink
-from ai.tools.context import ToolContext
+from ai.tools.types import ToolContext
 from ai.tools.permissions import allows, PermissionMode
 from ai.tools.skill_stubs import AddSkillStub
 from ai.tools.user_cli import UserCliTool

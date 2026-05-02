@@ -7,7 +7,7 @@ from typing import Any, ClassVar
 from ai.memory.para import ParaMemoryLayout
 from ai.memory.search import MemorySearch
 from ai.tools._base import Tool, ToolResult, ok_result
-from ai.tools.context import ToolContext
+from ai.tools.types import ToolContext
 
 _layout = ParaMemoryLayout()
 

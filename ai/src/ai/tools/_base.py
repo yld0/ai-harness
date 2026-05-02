@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any, ClassVar, Literal, TypedDict
 
 from ai.agent.prompt_builder import Channel
-from ai.tools.context import ToolContext
+from ai.tools.types import ToolContext
 from ai.tools.permissions import PermissionMode, allows
 
 

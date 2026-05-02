@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from contextlib import ExitStack, contextmanager
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ai.agent.loop import (
     Provider,
@@ -17,6 +17,9 @@ from ai.agent.loop import (
 )
 from ai.config import TelemetryConfig
 from ai.telemetry.redact import RedactSettings, redact_value, scrub_secrets_str
+
+if TYPE_CHECKING:
+    from ai.tools.types import ToolContext
 
 
 def _default_langfuse_class() -> type[Any]:
@@ -187,16 +190,16 @@ class LangfuseToolRegistryWrapper:
     def has_tool(self, name: str) -> bool:
         return self._inner.has_tool(name)
 
-    async def execute(self, call: ToolCall) -> str:
+    async def execute(self, call: ToolCall, ctx: ToolContext) -> str:
         if self._lf is None:
-            return await self._inner.execute(call)
+            return await self._inner.execute(call, ctx)
         args_payload = redact_value(call.arguments, self._settings, mode="tool_args")
         with self._lf.start_as_current_observation(
             name=f"tool.{call.name}",
             as_type="tool",
             input={"name": call.name, "arguments": args_payload},
         ) as span:
-            result = await self._inner.execute(call)
+            result = await self._inner.execute(call, ctx)
             if self._settings.redact_prompts:
                 out: Any = redact_value(result, self._settings, mode="prompt")
             else:

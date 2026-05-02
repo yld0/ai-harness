@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, ClassVar
 
 from ai.tools._base import Tool, ToolResult, err_result, ok_result
-from ai.tools.context import ToolContext
+from ai.tools.types import ToolContext
 from ai.clients.transport import GraphqlClient
 
 

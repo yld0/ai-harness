@@ -1,16 +1,21 @@
 """Bounded provider/tool loop used by the AgentRunner."""
 
+from __future__ import annotations
+
 import json
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any, Literal, Protocol
+from typing import TYPE_CHECKING, Any, Literal, Protocol
 
 from ai.agent.progress import NoopProgressSink, ProgressSink
 from ai.utils.spinner_verbs import choose_spinner_verb_bucket
 
+if TYPE_CHECKING:
+    from ai.tools.types import ToolContext
+
 MAX_ITERATIONS = 24
 FinishReason = Literal["stop", "tool_calls", "length", "error"]
-ToolHandler = Callable[[dict[str, Any]], Awaitable[Any] | Any]
+ToolHandler = Callable[..., Awaitable[Any] | Any]
 
 
 @dataclass(frozen=True)
@@ -60,7 +65,7 @@ class ToolRegistry:
     def has_tool(self, name: str) -> bool:
         return name in self._handlers
 
-    async def execute(self, call: ToolCall) -> str:
+    async def execute(self, call: ToolCall, ctx: ToolContext) -> str:
         handler = self._handlers.get(call.name)
         if handler is None:
             return json.dumps(
@@ -71,7 +76,7 @@ class ToolRegistry:
                 sort_keys=True,
             )
         try:
-            value = handler(call.arguments)
+            value = handler(ctx, call.arguments)
             if hasattr(value, "__await__"):
                 value = await value  # type: ignore[assignment]
             if isinstance(value, str):
@@ -105,6 +110,7 @@ async def run_turn_loop(
     *,
     provider: Provider,
     messages: list[ProviderMessage],
+    tool_ctx: ToolContext,
     tools: ToolRegistry | None = None,
     tools_enabled: bool = True,
     effort: str = "low",
@@ -116,12 +122,7 @@ async def run_turn_loop(
     working_messages = list(messages)
     last_turn = ProviderTurn(content="", finish_reason="stop")
 
-    # Inline import: ai.tools.__init__ → ai.tools.registry → ai.agent.loop creates a cycle.
-    # Deferring the import here breaks it (documented exception in AGENTS.md).
-    from ai.tools.context import get_tool_context  # noqa: PLC0415
-
-    _tctx = get_tool_context()
-    _spinner_ctx: str | None = " ".join(filter(None, [_tctx.route or None, effort])) or None
+    _spinner_ctx: str | None = " ".join(filter(None, [tool_ctx.route or None, effort])) or None
 
     for iteration in range(1, max_iterations + 1):
         await sink.cot_step(
@@ -162,7 +163,7 @@ async def run_turn_loop(
 
         for call in last_turn.tool_calls:
             # tool_start / tool_done are emitted by each Tool implementation (Phase 6).
-            result = await registry.execute(call)
+            result = await registry.execute(call, tool_ctx)
             working_messages.append(
                 ProviderMessage(
                     role="tool",

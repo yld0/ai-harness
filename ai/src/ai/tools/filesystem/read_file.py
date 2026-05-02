@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 from ai.agent.prompt_builder import Channel
 from ai.memory.para import ParaMemoryLayout
 from ai.tools._base import Tool, ToolResult, err_result, ok_result
-from ai.tools.context import ToolContext
+from ai.tools.types import ToolContext
 
 _MAX_BYTES = 256 * 1024
 

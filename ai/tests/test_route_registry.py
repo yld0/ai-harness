@@ -17,6 +17,7 @@ def test_all_routes_registered() -> None:
         "llm-council",
         "general-research",
         "heartbeat-extract",
+        "monitors-check",
         "memory-weekly-synthesis",
         "memory-decay-tick",
     }

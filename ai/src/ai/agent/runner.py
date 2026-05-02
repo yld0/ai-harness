@@ -39,7 +39,7 @@ from ai.schemas.agent import (
     FileComponent,
 )
 from ai.context import BEARER_TOKEN, CONVERSATION_ID, REQUEST_ID
-from ai.tools.context import ToolContext, reset_tool_context, set_tool_context
+from ai.tools.types import ToolContext
 from ai.tools.registry import list_openai_tools, register_tools
 from ai.telemetry.posthog import capture_event
 from ai.telemetry.langfuse import (
@@ -377,7 +377,6 @@ class AgentRunner:
         )
         bearer_token_ctx = BEARER_TOKEN.set(bearer_token)
         conversation_id_ctx = CONVERSATION_ID.set(request.conversation_id)
-        token = set_tool_context(tool_ctx)
         lf = get_langfuse_client()
         tsettings = redact_settings_from_env()
         trace_name = "run_automation" if route is not None else "run_chat"
@@ -399,13 +398,13 @@ class AgentRunner:
                 loop_result = await run_turn_loop(
                     provider=provider_exec,
                     messages=messages,
+                    tool_ctx=tool_ctx,
                     tools=tools_exec,
                     tools_enabled=prompt.tools_enabled,
                     effort=prompt.mode.effort if prompt.mode is not None else "low",
                     progress=sink,
                 )
         finally:
-            reset_tool_context(token)
             BEARER_TOKEN.reset(bearer_token_ctx)
             CONVERSATION_ID.reset(conversation_id_ctx)
         u_raw = loop_result.metadata.get("usage") or {}

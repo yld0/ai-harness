@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 from ai.agent.loop import (
@@ -8,7 +9,21 @@ from ai.agent.loop import (
     ToolRegistry,
     run_turn_loop,
 )
+from ai.agent.progress import NoopProgressSink
+from ai.tools.types import ToolContext
 from ai.const import SPINNER_VERBS
+
+_DEFAULT_CTX = ToolContext(
+    user_id="test",
+    session_id="test",
+    session_permission="ReadOnly",
+    channel="web",
+    route="",
+    progress=NoopProgressSink(),
+    bearer_token=None,
+    memory_root=Path("/tmp"),
+    project_root=Path("."),
+)
 
 
 class ToolThenFinalProvider:
@@ -32,10 +47,11 @@ class ToolThenFinalProvider:
 def test_loop_executes_tool_then_returns_final_text() -> None:
     async def run() -> None:
         tools = ToolRegistry()
-        tools.register("lookup", lambda args: {"ticker": args["ticker"], "price": 123})
+        tools.register("lookup", lambda ctx, args: {"ticker": args["ticker"], "price": 123})
         result = await run_turn_loop(
             provider=ToolThenFinalProvider(),
             messages=[ProviderMessage(role="user", content="price?")],
+            tool_ctx=_DEFAULT_CTX,
             tools=tools,
             tools_enabled=True,
             effort="medium",
@@ -67,6 +83,7 @@ def test_loop_stops_at_max_iterations() -> None:
         result = await run_turn_loop(
             provider=AlwaysToolProvider(),
             messages=[ProviderMessage(role="user", content="loop")],
+            tool_ctx=_DEFAULT_CTX,
             max_iterations=2,
         )
 

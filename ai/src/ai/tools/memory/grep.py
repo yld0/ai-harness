@@ -1,4 +1,4 @@
-"""Ripgrep-like text search over memory trees (and optional project paths)."""
+""" Ripgrep-like text search over memory trees (and optional project paths). """
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from typing import Any, ClassVar
 
 from ai.memory.para import ParaMemoryLayout
 from ai.tools._base import Tool, ToolResult, err_result, ok_result
-from ai.tools.context import ToolContext
+from ai.tools.types import ToolContext
 
 _MAX_HITS = 200
 

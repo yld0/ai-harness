@@ -1,11 +1,11 @@
-"""AskUser / clarification bridge — returns structured follow-up for the client."""
+""" AskUser / clarification bridge — returns structured follow-up for the client. """
 
 from __future__ import annotations
 
 from typing import Any, ClassVar
 
 from ai.tools._base import Tool, ToolResult, err_result, ok_result
-from ai.tools.context import ToolContext
+from ai.tools.types import ToolContext
 
 
 class AskUserTool(Tool):
@@ -41,6 +41,6 @@ class AskUserTool(Tool):
         payload = {
             "kind": "ask_user",
             "question": q,
-            "choices": list(choices) if isinstance(choices, list) else None,
+            "choices": None if choices is None else list(choices),
         }
         return ok_result(payload)

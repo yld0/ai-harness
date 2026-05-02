@@ -23,7 +23,7 @@ from typing import Any
 from ai.mcp.config import MCPServerConfig, load_mcp_config
 from ai.mcp.client import MCPClient, MCPToolDef
 from ai.tools._base import Tool, ToolResult, err_result, ok_result
-from ai.tools.context import ToolContext
+from ai.tools.types import ToolContext
 from ai.tools.permissions import PermissionMode
 
 logger = logging.getLogger(__name__)

@@ -28,7 +28,7 @@ from ai.tools.mcp_bridge import (
     load_mcp_tools,
     mcp_tool_name,
 )
-from ai.tools.context import ToolContext
+from ai.tools.types import ToolContext
 from ai.tools.permissions import PermissionMode
 from ai.agent.progress import NoopProgressSink
 

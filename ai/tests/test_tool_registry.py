@@ -19,7 +19,7 @@ def _async_client_with_transport(tr: httpx.MockTransport, *args: object, **kwarg
 
 
 from ai.agent.progress import CollectingProgressSink
-from ai.tools.context import ToolContext, set_tool_context, reset_tool_context
+from ai.tools.types import ToolContext
 from ai.tools.registry import all_tools, list_openai_tools, register_tools
 from ai.tools.search.tavily import TavilySearchTool
 
@@ -49,8 +49,8 @@ def test_registry_registers_all_tools() -> None:
         assert reg.has_tool(t.name)
 
 
-def test_tool_emits_tool_start_and_tool_done() -> None:
-    from ai.tools.heartbeat import HeartbeatTool
+def test_tool_emits_tool_start_and_tool_done(tmp_path: Path) -> None:
+    from ai.tools.monitors import MonitorsTool
 
     sink = CollectingProgressSink()
     ctx = ToolContext(
@@ -61,13 +61,13 @@ def test_tool_emits_tool_start_and_tool_done() -> None:
         route="",
         progress=sink,
         bearer_token=None,
-        memory_root=Path("/tmp/memory"),
+        memory_root=tmp_path,
         project_root=Path("."),
     )
-    tool = HeartbeatTool()
+    tool = MonitorsTool()
 
     async def run() -> None:
-        await tool.run(ctx, {"label": "ping", "wait_s": 0})
+        await tool.run(ctx, {"action": "view"})
 
     asyncio.run(run())
     cot = [ev["payload"] for ev in sink.events if ev.get("type") == "cot_step"]
@@ -91,32 +91,28 @@ def test_tool_registry_executes_with_context(monkeypatch, tmp_path: Path) -> Non
         memory_root=tmp_path,
         project_root=tmp_path,
     )
-    token = set_tool_context(ctx)
-    try:
-        monkeypatch.setenv("FMP_API_KEY", "fake")
-        import ai.tools.fmp as fmp_mod
+    monkeypatch.setenv("FMP_API_KEY", "fake")
+    import ai.tools.fmp as fmp_mod
 
-        transport = httpx.MockTransport(
-            lambda r: httpx.Response(
-                200,
-                json=[{"symbol": "MSFT", "price": 100}],
-            )
+    transport = httpx.MockTransport(
+        lambda r: httpx.Response(
+            200,
+            json=[{"symbol": "MSFT", "price": 100}],
         )
-        monkeypatch.setattr(
-            fmp_mod.httpx,
-            "AsyncClient",
-            lambda *a, **kw: _async_client_with_transport(transport, *a, **kw),
-        )
+    )
+    monkeypatch.setattr(
+        fmp_mod.httpx,
+        "AsyncClient",
+        lambda *a, **kw: _async_client_with_transport(transport, *a, **kw),
+    )
 
-        async def go() -> str:
-            return await reg.execute(ToolCall(id="1", name="fmp_get_quote", arguments={"symbol": "MSFT"}))
+    async def go() -> str:
+        return await reg.execute(ToolCall(id="1", name="fmp_get_quote", arguments={"symbol": "MSFT"}), ctx)
 
-        raw = asyncio.run(go())
-        data = json.loads(raw)
-        assert data["ok"] is True
-        assert data["data"]["symbol"] == "MSFT"
-    finally:
-        reset_tool_context(token)
+    raw = asyncio.run(go())
+    data = json.loads(raw)
+    assert data["ok"] is True
+    assert data["data"]["symbol"] == "MSFT"
 
 
 def test_tavily_mocked_no_network(monkeypatch) -> None:

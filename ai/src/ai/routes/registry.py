@@ -20,6 +20,7 @@ ROUTE_MODULE_PATHS: Final[dict[str, str]] = {
     "general-research": "ai.routes.handlers.not_implemented",
     "heartbeat-extract": "ai.routes.heartbeat_extract",
     "memory-weekly-synthesis": "ai.routes.memory_weekly_synthesis",
+    "monitors-check": "ai.routes.monitors_check",
     "memory-decay-tick": "ai.routes.memory_decay_tick",
 }
 

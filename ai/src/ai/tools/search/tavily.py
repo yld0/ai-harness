@@ -8,7 +8,7 @@ from typing import Any, ClassVar
 import httpx
 
 from ai.tools._base import Tool, ToolResult, err_result, ok_result
-from ai.tools.context import ToolContext
+from ai.tools.types import ToolContext
 from ai.tools.search.common import with_http_retry
 
 
