@@ -3,7 +3,7 @@ name = "ai"
 version = "26.4.0"
 description = "AI harness for financial research agents"
 readme = "DESIGN.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "shared",
     "fastapi>=0.115.11,<0.116.0",
@@ -22,6 +22,7 @@ dependencies = [
     "itsdangerous>=2.2.0",
     "langfuse>=4.5.1",
     "neonize>=0.3.17.post0",
+    "sentry-sdk>=2.58.0",
 ]
 
 [project.optional-dependencies]
@@ -66,8 +67,8 @@ filterwarnings = [
 
 [tool.black]
 line-length = 160
-target-version = ["py312"]
-
+target-version = ["py314"]
 
 [tool.uv.sources]
 shared = { git = "https://github.com/yld0/backend", branch = "master", subdirectory = "python/shared"  }
+

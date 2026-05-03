@@ -1,19 +1,21 @@
-"""Sentry error reporting — optional when ``SENTRY_DSN`` is unset."""
+""" Sentry. """
 
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import Callable
 from typing import Any
 
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
+
 from ai.config import TelemetryConfig
+from ai.config import telemetry_config, config
 from ai.telemetry.redact import redact_settings_from_env, redact_value
 
-
-def _load_sentry() -> Any:
-    import sentry_sdk
-
-    return sentry_sdk
+logger = logging.getLogger(__name__)
 
 
 def _breadcrumb_processor(data: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any] | None:
@@ -25,43 +27,23 @@ def _breadcrumb_processor(data: dict[str, Any], hint: dict[str, Any]) -> dict[st
     return data
 
 
-def init_sentry(
-    telemetry_config: TelemetryConfig | None = None,
-    *,
-    loader: Callable[[], Any] | None = None,
-) -> None:
-    dsn = ((telemetry_config.SENTRY_DSN if telemetry_config else "") or os.getenv("SENTRY_DSN", "")).strip()
+def init_sentry(telemetry_config: TelemetryConfig | None, *, loader: Callable[[], Any] | None = None) -> None:
+    """ Initialize Sentry with the given configuration. """
+    dsn = telemetry_config.SENTRY_DSN
     if not dsn:
+        logger.info("[STAGE] Sentry DSN not set, skipping initialisation")
         return
-    sdk = (loader or _load_sentry)()
-    sample_raw = (str(telemetry_config.TELEMETRY_SAMPLE_RATE) if telemetry_config else os.getenv("TELEMETRY_SAMPLE_RATE", "1.0")).strip() or "1.0"
-    sample = max(0.0, min(1.0, float(sample_raw)))
-    component = (telemetry_config.COMPONENT if telemetry_config else os.getenv("COMPONENT", "ai")).strip() or "ai"
 
-    try:
-        from sentry_sdk.integrations.fastapi import FastApiIntegration
-        from sentry_sdk.integrations.starlette import StarletteIntegration
-    except Exception:  # pragma: no cover - optional extras
-        integrations: list[Any] = []
-    else:
-        integrations = [StarletteIntegration(), FastApiIntegration()]
-
-    sdk.init(
+    sample_rate = max(0.0, min(1.0, float(telemetry_config.TELEMETRY_SAMPLE_RATE)))
+    
+    logger.info(f"[STAGE] Initializing Sentry with sample rate {sample_rate}")
+    sentry_sdk.init(
         dsn=dsn,
-        traces_sample_rate=sample,
+        traces_sample_rate=sample_rate,
         send_default_pii=False,
         environment=os.getenv("SENTRY_ENV", os.getenv("ENV", "development")),
-        integrations=integrations,
+        integrations=[StarletteIntegration(), FastApiIntegration()],
         before_breadcrumb=_breadcrumb_processor,
-        release=os.getenv("IMAGE_TAG") or None,
-        server_name=component,
+        release=os.getenv("IMAGE_TAG"),
+        server_name=config.COMPONENT,
     )
-
-
-def capture_exception(exc: BaseException | None = None, **kwargs: Any) -> None:
-    """Test-friendly wrapper around ``sentry_sdk.capture_exception``."""
-    try:
-        import sentry_sdk
-    except Exception:
-        return
-    sentry_sdk.capture_exception(exc, **kwargs)

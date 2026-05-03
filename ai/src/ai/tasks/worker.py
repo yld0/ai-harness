@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 REDIS_SETTINGS = RedisSettings(
     host=redis_config.REDIS_HOST,
     port=redis_config.REDIS_PORT,
-    username=(redis_config.REDIS_USERNAME or None) or None,
-    password=(redis_config.REDIS_PASSWORD or None) or None,
+    username=redis_config.REDIS_USERNAME or None,
+    password=redis_config.REDIS_PASSWORD or None,
 )
 
 
@@ -30,13 +30,15 @@ async def shutdown(ctx: dict[str, Any]) -> None:
         await s.aclose()
 
 
-async def recalculate_conversation_title(_ctx: dict[str, Any], user_id: str, conversation_id: str) -> None:
-    """Placeholder job — port from v2 when GraphQL wiring is ready."""
-    logger.info("recalculate_conversation_title (stub) %s %s", user_id, conversation_id)
+# async def placeholder_job(_ctx: dict[str, Any], user_id: str, conversation_id: str) -> None:
+#     """ Placeholder job. """
+#     logger.info("placeholder_job (stub) %s %s", user_id, conversation_id)
 
 
-class WorkerSettings:  # noqa: D101 — arq CLI entrypoint
-    functions = [recalculate_conversation_title]
+class WorkerSettings:
+    """ Arq worker entrypoint — registers background job functions and Redis connection. """
+
+    functions = [] # [placeholder_job]
     on_startup = startup
     on_shutdown = shutdown
     redis_settings = REDIS_SETTINGS

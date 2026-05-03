@@ -86,7 +86,6 @@ class TelemetryConfig:
         default="1.0",
         description="Sentry traces sample rate 0.0–1.0",
     )
-    COMPONENT: str = item(default="ai", description="Service name tag for Sentry")
 
 
 @register

@@ -9,7 +9,7 @@
 - [] hooks
 
 
-- 
+- [x] telemetry
 - [x] usage
 - [x] utils
 

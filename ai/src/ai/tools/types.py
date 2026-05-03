@@ -1,10 +1,11 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
+from pathlib import Path
+
 from ai.agent.prompt_builder import Channel
 from ai.tools.filesystem.permissions import SessionPermissionT
 from ai.agent.progress import ProgressSink
-from pathlib import Path
 
 
 @dataclass(frozen=True, slots=True)

@@ -17,12 +17,12 @@ from ai.api.ws_connection_manager import WSConnectionManager
 from ai.middleware.request_id import RequestIDMiddleware
 from ai.config import config, log_config, telemetry_config
 from ai.hooks.runner import HookRunner
-from ai.telemetry import setup_telemetry
+from ai.telemetry import init_telemetry
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    setup_telemetry(telemetry_config)
+    init_telemetry()
     app.state.runner = AgentRunner()
     app.state.ws_manager = WSConnectionManager()
     app.state.hook_runner = HookRunner()

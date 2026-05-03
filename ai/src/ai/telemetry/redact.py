@@ -39,19 +39,6 @@ class RedactSettings:
     redact_tool_args: bool
 
 
-def redact_settings_from_env() -> RedactSettings:
-    def _default_true(var: str) -> bool:
-        raw = os.getenv(var)
-        if raw is None:
-            return True
-        return raw.strip().lower() not in ("0", "false", "no", "off", "")
-
-    return RedactSettings(
-        redact_prompts=_default_true("TELEMETRY_REDACT_PROMPTS"),
-        redact_tool_args=_default_true("TELEMETRY_REDACT_TOOL_ARGS"),
-    )
-
-
 def scrub_secrets_str(value: str) -> str:
     """ Remove emails and Authorization patterns (always, regardless of redact flags). """
     s = _EMAIL_RE.sub("[email_redacted]", value)
