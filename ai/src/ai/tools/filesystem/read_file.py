@@ -20,7 +20,7 @@ def _normalise(p: str) -> Path:
 
 class ReadFileTool(Tool):
     name: ClassVar[str] = "read_file"
-    description: ClassVar[str] = "Read a text file from the user's memory tree, global memory, or project skills. " "Path must stay within allowed roots."
+    description: ClassVar[str] = "Read a text file from the user's memory tree, global memory, or project skills. Path must stay within allowed roots."
     hidden_channels: ClassVar[frozenset[Channel]] = frozenset(("whatsapp", "discord"))  # type: ignore[arg-type]
 
     @property

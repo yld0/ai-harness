@@ -211,6 +211,10 @@ class HookConfig:
     )
     AI_POST_HOOK_TIMEOUT_S: float = item(default=30.0, description="Total post-hook budget in seconds")
     AI_SKILL_REVIEW_THRESHOLD: int = item(default=10, description="Tool-call count that triggers a background skill review")
+    AI_SKILL_REVIEW_MODEL: str = item(
+        default="deepseek/deepseek-v4-pro",
+        description="OpenRouter or Gemini model id for autonomous skill review proposals",
+    )
 
 
 @register

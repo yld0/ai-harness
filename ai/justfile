@@ -13,6 +13,11 @@ run:
   @echo "[INFO] Running application..."
   @uv run --env-file .env -- python main.py
 
+lint:
+	@echo "[INFO] Running ruff..."
+	@uv run ruff check --fix .
+	@uv run ruff format .
+
 tests:
 	@echo "[INFO] Running tests..."
 	@uv run --env-file testing.env pytest tests/ -m "not slow and not live" -vvvs

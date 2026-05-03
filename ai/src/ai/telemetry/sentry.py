@@ -1,4 +1,4 @@
-""" Sentry. """
+"""Sentry."""
 
 from __future__ import annotations
 
@@ -28,14 +28,14 @@ def _breadcrumb_processor(data: dict[str, Any], hint: dict[str, Any]) -> dict[st
 
 
 def init_sentry(telemetry_config: TelemetryConfig | None, *, loader: Callable[[], Any] | None = None) -> None:
-    """ Initialize Sentry with the given configuration. """
+    """Initialize Sentry with the given configuration."""
     dsn = telemetry_config.SENTRY_DSN
     if not dsn:
         logger.info("[STAGE] Sentry DSN not set, skipping initialisation")
         return
 
     sample_rate = max(0.0, min(1.0, float(telemetry_config.TELEMETRY_SAMPLE_RATE)))
-    
+
     logger.info(f"[STAGE] Initializing Sentry with sample rate {sample_rate}")
     sentry_sdk.init(
         dsn=dsn,

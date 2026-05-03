@@ -1,4 +1,5 @@
-"""Domain models for the rules system.
+"""
+Domain models for the rules system.
 
 Defines ``Rule`` and ``RulesSnapshot`` — used by the cache, formatter,
 and bridge modules.  These are pure data containers with no I/O.
@@ -17,6 +18,7 @@ class Rule:
     instructions: str
     name: Optional[str] = None
     always_apply: bool = True
+    # FUTURE: Might need an option to allow LLM to decide if the rule should be applied or not.
 
 
 @dataclass(frozen=True)

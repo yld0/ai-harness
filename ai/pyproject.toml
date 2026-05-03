@@ -43,11 +43,11 @@ packages = ["src/ai"]
 
 [dependency-groups]
 dev = [
-    "black>=26.3.1",
     "deepeval>=3.9.7",
     "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
     "respx>=0.23.1",
+    "ruff>=0.15.12",
     "websockets>=16.0",
 ]
 
@@ -65,9 +65,13 @@ filterwarnings = [
     "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
 
-[tool.black]
+[tool.ruff]
 line-length = 160
-target-version = ["py314"]
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
 
 [tool.uv.sources]
 shared = { git = "https://github.com/yld0/backend", branch = "master", subdirectory = "python/shared"  }

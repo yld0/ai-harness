@@ -46,10 +46,10 @@ PLAN_PREAMBLE = "\n\n".join(
 )
 
 CRITICISE_PREAMBLE = (
-    "Criticise mode: act as a risk-focused reviewer. Stress-test assumptions, " "look for hidden failure modes, and separate evidence from speculation."
+    "Criticise mode: act as a risk-focused reviewer. Stress-test assumptions, look for hidden failure modes, and separate evidence from speculation."
 )
 
-EXPLAIN_PREAMBLE = "Explain mode: answer directly in text. Do not call tools; prioritize clarity, " "definitions, and concise examples."
+EXPLAIN_PREAMBLE = "Explain mode: answer directly in text. Do not call tools; prioritize clarity, definitions, and concise examples."
 
 
 MODE_CONFIGS: dict[AgentMode, ModeConfig] = {

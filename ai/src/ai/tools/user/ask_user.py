@@ -1,4 +1,4 @@
-""" AskUser / clarification bridge — returns structured follow-up for the client. """
+"""AskUser / clarification bridge — returns structured follow-up for the client."""
 
 from __future__ import annotations
 

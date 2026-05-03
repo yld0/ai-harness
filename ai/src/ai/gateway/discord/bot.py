@@ -23,7 +23,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-NOT_IMPLEMENTED_MSG = "Discord gateway is not yet implemented. " "See FUTURE.md for the planned discord.py-based integration."
+NOT_IMPLEMENTED_MSG = "Discord gateway is not yet implemented. See FUTURE.md for the planned discord.py-based integration."
 
 
 class DiscordBot:

@@ -1,4 +1,4 @@
-""" Tool catalog, OpenAPI-style definitions, and ToolRegistry wiring. """
+"""Tool catalog, OpenAPI-style definitions, and ToolRegistry wiring."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ from ai.tools.internal.yld import YldGraphqlQuery
 
 
 def all_tools() -> tuple[Tool, ...]:
-    """ Return every tool instance known to the system. """
+    """Return every tool instance known to the system."""
     return (
         FmpGetQuote(),
         YldGraphqlQuery(),
@@ -49,7 +49,7 @@ def all_tools() -> tuple[Tool, ...]:
 
 
 def _tool_visible_for_channel(tool: Tool, channel: Channel) -> bool:
-    """ Return whether the tool should be surfaced on the given channel. """
+    """Return whether the tool should be surfaced on the given channel."""
     if channel in tool.hidden_channels:
         return False
     return True
@@ -67,7 +67,7 @@ def tool_allowed(
     channel: Channel,
     route: str,
 ) -> bool:
-    """ Check whether a tool passes permission, channel, and route gates. """
+    """Check whether a tool passes permission, channel, and route gates."""
     if not allows(session, tool.required_permission):
         return False
     if not _tool_visible_for_channel(tool, channel):

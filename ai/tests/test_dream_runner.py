@@ -25,7 +25,7 @@ async def test_dream_writes_memory_and_entity(tmp_path: Path) -> None:
 
     async def fake_llm(prompt: str) -> str:
         assert "Dream" in prompt or "MEMORY" in prompt
-        return "<<MEMORY_INDEX>>\n## Index line\n<<END>>\n" "<<ENTITY tickers ABCD>>\n## Consolidated ticker\nyes\n<<END>>\n"
+        return "<<MEMORY_INDEX>>\n## Index line\n<<END>>\n<<ENTITY tickers ABCD>>\n## Consolidated ticker\nyes\n<<END>>\n"
 
     dr = DreamRunner(layout=layout, call_llm=fake_llm)
     res = await dr.run(uid, recent_daily_notes=3)

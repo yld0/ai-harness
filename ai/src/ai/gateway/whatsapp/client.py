@@ -35,7 +35,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 logger = logging.getLogger(__name__)
 
-_NEONIZE_MISSING = "neonize is not installed.  Install the optional extra: " "pip install 'ai[whatsapp]'  or  uv add neonize"
+_NEONIZE_MISSING = "neonize is not installed.  Install the optional extra: pip install 'ai[whatsapp]'  or  uv add neonize"
 
 
 class WhatsAppClient:

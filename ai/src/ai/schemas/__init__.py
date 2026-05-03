@@ -1,1 +1,1 @@
-"""Pydantic schemas for API and agent contracts."""
+""" Pydantic schemas for API and agent contracts. """

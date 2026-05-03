@@ -149,13 +149,17 @@ class AutomationsClient:
         if status is not None:
             variables["status"] = status
         return await self.transport.execute(
-            LIST_AUTOMATIONS_QUERY, variables=variables, bearer_token=bearer_token,
+            LIST_AUTOMATIONS_QUERY,
+            variables=variables,
+            bearer_token=bearer_token,
         )
 
     async def get_automation(self, *, bearer_token: str, automation_id: str) -> dict[str, Any]:
         """Return a single automation by ID."""
         return await self.transport.execute(
-            GET_AUTOMATION_QUERY, variables={"id": automation_id}, bearer_token=bearer_token,
+            GET_AUTOMATION_QUERY,
+            variables={"id": automation_id},
+            bearer_token=bearer_token,
         )
 
     async def create_automation(
@@ -184,7 +188,9 @@ class AutomationsClient:
         if input_data is not None:
             automation_input["input"] = input_data
         return await self.transport.execute(
-            CREATE_AUTOMATION_MUTATION, variables={"input": automation_input}, bearer_token=bearer_token,
+            CREATE_AUTOMATION_MUTATION,
+            variables={"input": automation_input},
+            bearer_token=bearer_token,
         )
 
     async def update_automation(
@@ -225,26 +231,34 @@ class AutomationsClient:
     async def pause_automation(self, *, bearer_token: str, automation_id: str) -> dict[str, Any]:
         """Pause an active automation."""
         return await self.transport.execute(
-            PAUSE_AUTOMATION_MUTATION, variables={"id": automation_id}, bearer_token=bearer_token,
+            PAUSE_AUTOMATION_MUTATION,
+            variables={"id": automation_id},
+            bearer_token=bearer_token,
         )
 
     async def resume_automation(self, *, bearer_token: str, automation_id: str) -> dict[str, Any]:
         """Resume a paused automation."""
         return await self.transport.execute(
-            RESUME_AUTOMATION_MUTATION, variables={"id": automation_id}, bearer_token=bearer_token,
+            RESUME_AUTOMATION_MUTATION,
+            variables={"id": automation_id},
+            bearer_token=bearer_token,
         )
 
     async def delete_automation(self, *, bearer_token: str, automation_id: str) -> bool:
         """Delete an automation."""
         data = await self.transport.execute(
-            DELETE_AUTOMATION_MUTATION, variables={"id": automation_id}, bearer_token=bearer_token,
+            DELETE_AUTOMATION_MUTATION,
+            variables={"id": automation_id},
+            bearer_token=bearer_token,
         )
         return bool(data.get("automations_deleteAutomation", False))
 
     async def run_now(self, *, bearer_token: str, automation_id: str) -> dict[str, Any]:
         """Trigger an immediate run of an automation."""
         return await self.transport.execute(
-            RUN_NOW_MUTATION, variables={"id": automation_id}, bearer_token=bearer_token,
+            RUN_NOW_MUTATION,
+            variables={"id": automation_id},
+            bearer_token=bearer_token,
         )
 
 
@@ -256,14 +270,16 @@ async def find_automation_by_route(
 ) -> dict[str, Any] | None:
     """Find the first automation matching a given route name, or None."""
     data = await AutomationsClient(transport=client).list_automations(
-        bearer_token=bearer_token, status="ACTIVE",
+        bearer_token=bearer_token,
+        status="ACTIVE",
     )
     for auto in (data.get("automations_automations") or {}).get("automations") or []:
         if isinstance(auto, dict) and auto.get("route") == route:
             return auto
 
     data = await AutomationsClient(transport=client).list_automations(
-        bearer_token=bearer_token, status="PAUSED",
+        bearer_token=bearer_token,
+        status="PAUSED",
     )
     for auto in (data.get("automations_automations") or {}).get("automations") or []:
         if isinstance(auto, dict) and auto.get("route") == route:

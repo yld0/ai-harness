@@ -1,4 +1,5 @@
-"""Render a RulesSnapshot into the rules prompt section (slot 08).
+"""
+Render a RulesSnapshot into the rules prompt section (slot 08).
 
 Format contract
 ---------------
@@ -37,11 +38,11 @@ def format_rules_block(snapshot: RulesSnapshot) -> str:
 
     if snapshot.always_apply:
         rendered = "\n\n".join(_render_rule(r) for r in snapshot.always_apply)
-        sections.append("## Always-apply rules\n" "The following rules must be followed in every response.\n\n" + rendered)
+        sections.append("## Always-apply rules\nThe following rules must be followed in every response.\n\n" + rendered)
 
     if snapshot.manual:
         rendered = "\n\n".join(_render_rule(r) for r in snapshot.manual)
-        sections.append("## Conditional rules\n" "Apply the following rules when the conversation topic is relevant.\n\n" + rendered)
+        sections.append("## Conditional rules\nApply the following rules when the conversation topic is relevant.\n\n" + rendered)
 
     body = "\n\n".join(sections)
     return f"<rules>\n{body}\n</rules>"

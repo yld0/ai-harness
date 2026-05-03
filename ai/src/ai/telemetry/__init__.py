@@ -1,4 +1,4 @@
-""" Telemetry integrations (Sentry, PostHog, Langfuse). """
+"""Telemetry integrations (Sentry, PostHog, Langfuse)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from ai.telemetry.sentry import init_sentry
 
 
 def init_telemetry(telemetry_cfg: TelemetryConfig | None = telemetry_config) -> None:
-    """ Initialize configured backends; no-op when keys/DSN are absent. """
+    """Initialize configured backends; no-op when keys/DSN are absent."""
     init_sentry(telemetry_cfg)
     init_posthog(telemetry_cfg)
     init_langfuse(telemetry_cfg)

@@ -24,19 +24,19 @@ Memory root (filesystem): `{memory_root_display}`
 ## Current MEMORY.md (index)
 
 ```markdown
-{memory_index_text.strip() or '(empty)'}
+{memory_index_text.strip() or "(empty)"}
 ```
 
 ## Recent daily notes (append-only signal)
 
 ```markdown
-{daily_notes_text.strip() or '(none provided)'}
+{daily_notes_text.strip() or "(none provided)"}
 ```
 
 ## Entity summaries (existing topic files under life/<kind>/<id>/summary.md)
 
 ```markdown
-{entity_summaries_text.strip() or '(none found)'}
+{entity_summaries_text.strip() or "(none found)"}
 ```
 
 ---

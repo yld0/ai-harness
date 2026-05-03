@@ -3,19 +3,22 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import threading
-import time
+from dataclasses import make_dataclass, replace
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
-from dataclasses import replace
-
 import pytest
 
 from ai.config import hook_config
+from ai.hooks.base import load_hook_config
+from ai.hooks.runner import _DEFAULT_HOOKS
 from ai.hooks.types import HookContext
 from ai.hooks.skill_review import SkillReviewHook, _count_tool_calls
+from ai.memory.para import MemoryPathError, ParaMemoryLayout
+from ai.skills.review_runner import ReviewRunner
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,8 +36,13 @@ def _make_ctx(
     threshold: int = 5,
     user_id: str = "u1",
     conv_id: str = "c1",
+    skill_review_model: str = "deepseek/deepseek-v4-pro",
 ) -> HookContext:
-    cfg = replace(hook_config, AI_SKILL_REVIEW_THRESHOLD=threshold)
+    cfg = replace(
+        hook_config,
+        AI_SKILL_REVIEW_THRESHOLD=threshold,
+        AI_SKILL_REVIEW_MODEL=skill_review_model,
+    )
     return HookContext(
         user_id=user_id,
         conversation_id=conv_id,
@@ -66,8 +74,6 @@ def test_count_tool_calls_mixed_roles():
 
 def test_count_tool_calls_provider_message_objects():
     """Works with objects that have a .role attribute (e.g. ProviderMessage)."""
-    from dataclasses import make_dataclass
-
     Msg = make_dataclass("Msg", [("role", str), ("name", str | None), ("content", str)])
     msgs = [
         Msg(role="user", name=None, content="q"),
@@ -125,8 +131,6 @@ def test_threshold_zero_disables():
 
 def test_second_call_returns_already_pending():
     runner = MagicMock()
-    # Simulate a slow async run that does NOT clear pending quickly.
-    event = threading.Event()
 
     async def _slow_run(**kwargs):
         await asyncio.sleep(0.1)
@@ -160,21 +164,51 @@ def test_different_sessions_independent():
     assert res_b.detail == "review_dispatched"
 
 
+def test_hook_passes_configured_skill_review_model(monkeypatch):
+    captured: dict[str, Any] = {}
+    runner = MagicMock()
+
+    async def _run(**kwargs):
+        captured.update(kwargs)
+        return Path("/tmp/proposed.md")
+
+    class ImmediateThread:
+        def __init__(self, *, target, args=(), kwargs=None, **_ignored):
+            self._target = target
+            self._args = args
+            self._kwargs = kwargs or {}
+
+        def start(self):
+            self._target(*self._args, **self._kwargs)
+
+    runner.run = _run
+    monkeypatch.setattr("ai.hooks.skill_review.threading.Thread", ImmediateThread)
+
+    hook = SkillReviewHook(runner=runner, threshold=3)
+    ctx = _make_ctx(_tool_msgs(3), skill_review_model="deepseek/deepseek-v4-pro")
+    result = hook.run(ctx)
+
+    assert result.detail == "review_dispatched"
+    assert captured["skill_review_model"] == "deepseek/deepseek-v4-pro"
+
+
 # ─── ReviewRunner ─────────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
 async def test_review_runner_writes_file(tmp_path):
-    from ai.memory.para import ParaMemoryLayout
-    from ai.skills.review_runner import ReviewRunner
-
     layout = ParaMemoryLayout(memory_root=tmp_path)
-    runner = ReviewRunner(layout=layout, call_llm=None)
+
+    async def _fake_llm(prompt: str) -> str:
+        return "## My Proposed Skill\n\nname: my-skill\ndescription: Does X"
+
+    runner = ReviewRunner(layout=layout, call_llm=_fake_llm)
     out = await runner.run(
         user_id="u1",
         user_message="what is AAPL PE ratio?",
         response_text="The PE is 28",
         messages=_tool_msgs(3),
+        skill_review_model="deepseek/deepseek-v4-pro",
     )
 
     assert out.exists()
@@ -182,17 +216,20 @@ async def test_review_runner_writes_file(tmp_path):
     text = out.read_text()
     assert "status: pending_review" in text
     assert "proposed_for_user: u1" in text
+    assert "source: autonomous_skill_review" in text
+    assert "My Proposed Skill" in text
+    assert "my-skill" in text
 
 
 @pytest.mark.asyncio
 async def test_review_runner_uses_llm_call(tmp_path):
-    from ai.memory.para import ParaMemoryLayout
-    from ai.skills.review_runner import ReviewRunner
-
     layout = ParaMemoryLayout(memory_root=tmp_path)
     llm_body = "## My Proposed Skill\n\nname: my-skill\ndescription: Does X"
+    captured_prompt = ""
 
     async def _fake_llm(prompt: str) -> str:
+        nonlocal captured_prompt
+        captured_prompt = prompt
         return llm_body
 
     runner = ReviewRunner(layout=layout, call_llm=_fake_llm)
@@ -206,14 +243,12 @@ async def test_review_runner_uses_llm_call(tmp_path):
     text = out.read_text()
     assert "My Proposed Skill" in text
     assert "my-skill" in text
+    assert "Assistant response summary: Sector overview" in captured_prompt
 
 
 @pytest.mark.asyncio
 async def test_review_runner_path_jail(tmp_path):
     """Path traversal in user_id must raise MemoryPathError."""
-    from ai.memory.para import ParaMemoryLayout, MemoryPathError
-    from ai.skills.review_runner import ReviewRunner
-
     layout = ParaMemoryLayout(memory_root=tmp_path)
     runner = ReviewRunner(layout=layout)
     with pytest.raises((MemoryPathError, ValueError)):
@@ -226,33 +261,47 @@ async def test_review_runner_path_jail(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_review_runner_llm_failure_falls_back_to_scaffold(tmp_path):
-    from ai.memory.para import ParaMemoryLayout
-    from ai.skills.review_runner import ReviewRunner
-
+async def test_review_runner_llm_failure_writes_nothing(tmp_path):
     layout = ParaMemoryLayout(memory_root=tmp_path)
 
     async def _broken_llm(prompt: str) -> str:
         raise RuntimeError("LLM unavailable")
 
     runner = ReviewRunner(layout=layout, call_llm=_broken_llm)
-    out = await runner.run(
-        user_id="u1",
-        user_message="q",
-        response_text="r",
-        messages=_tool_msgs(2),
-    )
+    with pytest.raises(RuntimeError, match="LLM unavailable"):
+        await runner.run(
+            user_id="u1",
+            user_message="q",
+            response_text="r",
+            messages=_tool_msgs(2),
+        )
 
-    text = out.read_text()
-    assert "status: pending_review" in text
+    assert list(tmp_path.rglob("proposed-*.md")) == []
+
+
+@pytest.mark.asyncio
+async def test_review_runner_empty_llm_output_writes_nothing(tmp_path):
+    layout = ParaMemoryLayout(memory_root=tmp_path)
+
+    async def _empty_llm(prompt: str) -> str:
+        return " \n "
+
+    runner = ReviewRunner(layout=layout, call_llm=_empty_llm)
+    with pytest.raises(ValueError, match="empty output"):
+        await runner.run(
+            user_id="u1",
+            user_message="q",
+            response_text="r",
+            messages=_tool_msgs(2),
+        )
+
+    assert list(tmp_path.rglob("proposed-*.md")) == []
 
 
 # ─── runner.py registration ───────────────────────────────────────────────────
 
 
 def test_skill_review_registered_in_default_hooks():
-    from ai.hooks.runner import _DEFAULT_HOOKS
-
     assert "skill_review" in _DEFAULT_HOOKS
     assert isinstance(_DEFAULT_HOOKS["skill_review"], SkillReviewHook)
     assert "extract_memories" in _DEFAULT_HOOKS
@@ -261,16 +310,25 @@ def test_skill_review_registered_in_default_hooks():
 # ─── HookConfig env-backed threshold ─────────────────────────────────────────
 def test_load_hook_config_reads_threshold(monkeypatch):
     monkeypatch.setenv("AI_SKILL_REVIEW_THRESHOLD", "25")
-    from ai.hooks.base import load_hook_config
 
     cfg = load_hook_config()
     assert cfg.AI_SKILL_REVIEW_THRESHOLD == 25
 
 
-def test_load_hook_config_default_threshold():
-    import os
-    from ai.hooks.base import load_hook_config
+def test_load_hook_config_reads_skill_review_model(monkeypatch):
+    monkeypatch.setenv("AI_SKILL_REVIEW_MODEL", "openai/gpt-5-mini")
 
+    cfg = load_hook_config()
+    assert cfg.AI_SKILL_REVIEW_MODEL == "openai/gpt-5-mini"
+
+
+def test_load_hook_config_default_threshold():
     os.environ.pop("AI_SKILL_REVIEW_THRESHOLD", None)
     cfg = load_hook_config()
     assert cfg.AI_SKILL_REVIEW_THRESHOLD == 10
+
+
+def test_load_hook_config_default_skill_review_model():
+    os.environ.pop("AI_SKILL_REVIEW_MODEL", None)
+    cfg = load_hook_config()
+    assert cfg.AI_SKILL_REVIEW_MODEL == "deepseek/deepseek-v4-pro"

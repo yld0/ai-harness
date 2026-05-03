@@ -1,4 +1,4 @@
-""" Shared redaction for Sentry, PostHog, and Langfuse captures. """
+"""Shared redaction for Sentry, PostHog, and Langfuse captures."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ class RedactSettings:
 
 
 def scrub_secrets_str(value: str) -> str:
-    """ Remove emails and Authorization patterns (always, regardless of redact flags). """
+    """Remove emails and Authorization patterns (always, regardless of redact flags)."""
     s = _EMAIL_RE.sub("[email_redacted]", value)
     s = _AUTH_LINE_RE.sub("Authorization: [redacted]", s)
     return s
@@ -48,12 +48,7 @@ def scrub_secrets_str(value: str) -> str:
 
 def _is_sensitive_key(key: str) -> bool:
     lower = key.lower().replace("-", "_")
-    return (
-        lower in _EXACT_SENSITIVE_KEYS
-        or lower.endswith("_secret")
-        or lower.endswith("_password")
-        or lower.endswith("_token")
-    )
+    return lower in _EXACT_SENSITIVE_KEYS or lower.endswith("_secret") or lower.endswith("_password") or lower.endswith("_token")
 
 
 def _redact_scalar_str(s: str, *, content_redact: bool) -> str | _RedactedLargeString:
@@ -69,7 +64,7 @@ def _redact_scalar_str(s: str, *, content_redact: bool) -> str | _RedactedLargeS
 
 
 def redact_value(value: object, settings: RedactSettings, *, mode: str) -> object:
-    """ Redact a JSON-like structure.
+    """Redact a JSON-like structure.
 
     ``mode``:
       - ``prompt`` — apply ``TELEMETRY_REDACT_PROMPTS`` to string payloads.

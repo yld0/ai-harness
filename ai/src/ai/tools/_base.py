@@ -50,7 +50,7 @@ def ok_result(data: Any) -> ToolResult:
 class Tool(ABC):
     """
     Async tool with JSON schema, permission gating, and CoT tool_start/tool_done.
-    
+
     Args:
         name: The name of the tool.
         description: The description of the tool.
@@ -87,7 +87,7 @@ class Tool(ABC):
         if not allows(session, self.required_permission):
             return err_result(
                 "permission_denied",
-                f"Tool {self.name} requires {self.required_permission.name} session permission; " f"current session is {session}.",
+                f"Tool {self.name} requires {self.required_permission.name} session permission; current session is {session}.",
             ).to_json()
         if self.file_component_risk and ctx.channel in self.hidden_channels:
             return err_result(

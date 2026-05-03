@@ -75,9 +75,7 @@ def register(handler: "CommandHandler", *, replace: bool = False) -> "CommandHan
         for key in keys:
             existing = _REGISTRY.get(key)
             if existing is not None and existing is not handler:
-                raise CommandRegistrationError(
-                    f"Command key {key!r} already registered to " f"{type(existing).__name__}; cannot register {type(handler).__name__}"
-                )
+                raise CommandRegistrationError(f"Command key {key!r} already registered to {type(existing).__name__}; cannot register {type(handler).__name__}")
     for key in keys:
         _REGISTRY[key] = handler
     return handler

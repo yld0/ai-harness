@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 REDIS_SETTINGS = RedisSettings(
     host=redis_config.REDIS_HOST,
     port=redis_config.REDIS_PORT,
-    username=redis_config.REDIS_USERNAME or None,
-    password=redis_config.REDIS_PASSWORD or None,
+    username=redis_config.REDIS_USERNAME,
+    password=redis_config.REDIS_PASSWORD,
 )
 
 
@@ -36,9 +36,9 @@ async def shutdown(ctx: dict[str, Any]) -> None:
 
 
 class WorkerSettings:
-    """ Arq worker entrypoint — registers background job functions and Redis connection. """
+    """Arq worker entrypoint — registers background job functions and Redis connection."""
 
-    functions = [] # [placeholder_job]
+    functions = []  # [placeholder_job]
     on_startup = startup
     on_shutdown = shutdown
     redis_settings = REDIS_SETTINGS

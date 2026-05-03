@@ -39,7 +39,7 @@ def test_golden_ordering_and_xml_shape() -> None:
 
 
 def test_parse_front_matter_multiline() -> None:
-    sample = "---\n" "name: test-skill\ndescription: 'Hello world'\n" "bin:\n  - mytool\n" "---\n" "\n# Body\n"
+    sample = "---\nname: test-skill\ndescription: 'Hello world'\nbin:\n  - mytool\n---\n\n# Body\n"
     fm, body = _parse_front_matter_text(sample)
     assert fm.get("name") == "test-skill"
     assert "Body" in body
@@ -49,12 +49,12 @@ def test_parse_front_matter_multiline() -> None:
 def mini_repo_with_skills(tmp_path: Path) -> Path:
     (tmp_path / "references-skills" / "a-skill").mkdir(parents=True)
     (tmp_path / "references-skills" / "a-skill" / "SKILL.md").write_text(
-        "---\n" "name: a-skill\ndescription: From references\n" "---\n\n# A\n",
+        "---\nname: a-skill\ndescription: From references\n---\n\n# A\n",
         encoding="utf-8",
     )
     (tmp_path / "skills" / "a-skill").mkdir(parents=True)
     (tmp_path / "skills" / "a-skill" / "SKILL.md").write_text(
-        "---\n" "name: a-skill\ndescription: Overridden in workspace\n" "requires_write: true\n" "---\n\n# W\n",
+        "---\nname: a-skill\ndescription: Overridden in workspace\nrequires_write: true\n---\n\n# W\n",
         encoding="utf-8",
     )
     return tmp_path
@@ -70,7 +70,7 @@ def test_workspace_shadows_references(mini_repo_with_skills: Path) -> None:
 def test_build_system_block_includes_bootstrap_repo(tmp_path: Path) -> None:
     (tmp_path / "references-skills" / "para-memory-files").mkdir(parents=True)
     (tmp_path / "references-skills" / "para-memory-files" / "SKILL.md").write_text(
-        "---\n" "name: para-memory-files\ndescription: Test skill for index\n" "---\n\n# X\n",
+        "---\nname: para-memory-files\ndescription: Test skill for index\n---\n\n# X\n",
         encoding="utf-8",
     )
     r = build_skills_system_block(tmp_path, max_prompt_chars=100_000)

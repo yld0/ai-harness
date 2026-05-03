@@ -1,1 +1,1 @@
-""" Agent-callable tools and registry. """
+"""Agent-callable tools and registry."""

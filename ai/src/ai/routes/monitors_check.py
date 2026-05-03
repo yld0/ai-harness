@@ -88,12 +88,7 @@ async def run(ctx: RouteContext) -> RouteResult:
             items_failed += 1
             logger.warning("monitors-check: item failed: %s", exc)
 
-    summary = (
-        f"Monitors check complete: {items_checked} items checked, "
-        f"{items_flagged} flagged"
-        + (f", {items_failed} failed" if items_failed else "")
-        + "."
-    )
+    summary = f"Monitors check complete: {items_checked} items checked, {items_flagged} flagged" + (f", {items_failed} failed" if items_failed else "") + "."
     return RouteResult(
         text=summary,
         metadata={

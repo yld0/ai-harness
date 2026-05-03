@@ -1,4 +1,4 @@
-""" Ripgrep-like text search over memory trees (and optional project paths). """
+"""Ripgrep-like text search over memory trees (and optional project paths)."""
 
 from __future__ import annotations
 

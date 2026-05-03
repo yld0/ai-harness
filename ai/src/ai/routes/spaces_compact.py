@@ -43,7 +43,7 @@ async def run(ctx: RouteContext) -> RouteResult:
 
     if summary_path.is_file():
         summary_content = summary_path.read_text("utf-8")
-        kb_prompt = f"Rewrite the following space summary as a concise knowledge base in Markdown.\n\n" f"---\n{summary_content[:4000]}\n---"
+        kb_prompt = f"Rewrite the following space summary as a concise knowledge base in Markdown.\n\n---\n{summary_content[:4000]}\n---"
         try:
             kb_content = await ctx.call_llm(kb_prompt)
             kb_path.write_text(kb_content, encoding="utf-8")

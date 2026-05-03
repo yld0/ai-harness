@@ -156,7 +156,7 @@ def build_result(
 
 
 class BaseCouncilVersion(ABC):
-    """ Template for a three-stage council implementation. """
+    """Template for a three-stage council implementation."""
 
     version: CouncilVersionName
 
@@ -175,9 +175,7 @@ class BaseCouncilVersion(ABC):
         """Run the invariant council lifecycle for this version."""
         council_models = models[:no_of_council] if no_of_council is not None else models
 
-
-
-        # Stage 1: Collect stage-one opinions.
+        # Stage 1: Collect stage-one opinions.
 
         await self.on_stage_start("stage1")
         opinion_responses = await self.opinions(query, council_models)
@@ -195,13 +193,6 @@ class BaseCouncilVersion(ABC):
                 final_text=self.all_panelists_failed_text,
                 metadata={"failed_models": failed_models},
             )
-
-
-
-
-
-
-
 
         stage2: list[CouncilRankingItem] = []
         label_to_model: dict[str, str] = {}
@@ -234,33 +225,36 @@ class BaseCouncilVersion(ABC):
 
     @abstractmethod
     async def opinions(self, query: str, models: list[str]) -> dict[str, str | None]:
-        """ Stage one: Collect stage-one opinions. """
+        """Stage one: Collect stage-one opinions."""
         ...
 
     @abstractmethod
-    async def rank(
-        self, query: str, models: list[str], stage1: list[CouncilStageItem]) -> dict[str, str | None]:
-        """ Stage two: Collect stage-two peer rankings. """
+    async def rank(self, query: str, models: list[str], stage1: list[CouncilStageItem]) -> dict[str, str | None]:
+        """Stage two: Collect stage-two peer rankings."""
         ...
 
     @abstractmethod
     async def final_review(
-        self, query: str, judge_model: str, stage1: list[CouncilStageItem], stage2: list[CouncilRankingItem],
+        self,
+        query: str,
+        judge_model: str,
+        stage1: list[CouncilStageItem],
+        stage2: list[CouncilRankingItem],
     ) -> str | None:
-        """ Stage three: Collect the final judge synthesis. """
+        """Stage three: Collect the final judge synthesis."""
         ...
 
     async def on_stage_start(self, stage: str) -> None:
         """Hook called before each stage starts."""
 
     async def on_opinions_done(self, stage1: list[CouncilStageItem], failed_models: list[str]) -> None:
-        """ Hook called after stage one finishes. """
+        """Hook called after stage one finishes."""
         ...
 
     async def on_rank_done(self, rankings: list[CouncilRankingItem], aggregate_rankings: list[AggregateRanking]) -> None:
-        """ Hook called after stage two finishes. """
+        """Hook called after stage two finishes."""
         ...
 
     async def on_final_done(self, judge_model: str, final_text: str) -> None:
-        """ Hook called after stage three finishes. """
+        """Hook called after stage three finishes."""
         ...

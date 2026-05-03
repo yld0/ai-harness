@@ -12,7 +12,7 @@ def test_eligibility_hidden_missing_bin(tmp_path: Path) -> None:
     skill_dir = tmp_path / "references-skills" / "bin-test"
     skill_dir.mkdir(parents=True)
     (skill_dir / "SKILL.md").write_text(
-        "---\n" "name: bin-test\ndescription: needs fake binary\n" "bin:\n  - __nonexistent_binary_zz_qq__\n" "---\n\n# X\n",
+        "---\nname: bin-test\ndescription: needs fake binary\nbin:\n  - __nonexistent_binary_zz_qq__\n---\n\n# X\n",
         encoding="utf-8",
     )
     found = build_skill_index(tmp_path)
@@ -23,7 +23,7 @@ def test_eligibility_shown_when_bin_exists(tmp_path: Path) -> None:
     skill_dir = tmp_path / "references-skills" / "ok-bin"
     skill_dir.mkdir(parents=True)
     (skill_dir / "SKILL.md").write_text(
-        "---\n" "name: ok-bin\ndescription: needs python (always on PATH in tests)\n" "bin:\n  - python3\n" "---\n\n# X\n",
+        "---\nname: ok-bin\ndescription: needs python (always on PATH in tests)\nbin:\n  - python3\n---\n\n# X\n",
         encoding="utf-8",
     )
     found = {e.name: e for e in build_skill_index(tmp_path)}
@@ -34,7 +34,7 @@ def test_readonly_hides_write_skill(tmp_path: Path) -> None:
     skill_dir = tmp_path / "references-skills" / "wskill"
     skill_dir.mkdir(parents=True)
     (skill_dir / "SKILL.md").write_text(
-        "---\n" "name: wskill\ndescription: needs workspace write\n" "tools:\n  - WorkspaceWrite\n" "---\n\n# X\n",
+        "---\nname: wskill\ndescription: needs workspace write\ntools:\n  - WorkspaceWrite\n---\n\n# X\n",
         encoding="utf-8",
     )
     assert not any(e.name == "wskill" for e in build_skill_index(tmp_path, session_permission="ReadOnly"))

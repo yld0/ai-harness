@@ -35,7 +35,8 @@ def _cache_key(user_id: str, bearer_token: str) -> str:
 
 
 class RulesCache:
-    """Process-local per-user rules cache with configurable TTL.
+    """
+    Process-local per-user rules cache with configurable TTL.
 
     Args:
         ttl_s: Seconds before a cached snapshot is considered stale.

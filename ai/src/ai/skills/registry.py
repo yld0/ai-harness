@@ -1,4 +1,4 @@
-""" Skill directory discovery, shadowing, and index assembly. """
+"""Skill directory discovery, shadowing, and index assembly."""
 
 from __future__ import annotations
 

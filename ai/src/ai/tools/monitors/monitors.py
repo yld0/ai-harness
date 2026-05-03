@@ -90,13 +90,12 @@ class MonitorsTool(Tool):
     def _handle_view(self, monitors_path: Path) -> ToolResult:
         """Return current checklist contents or a helpful default message."""
         if not monitors_path.is_file():
-            return ok_result({
-                "status": "empty",
-                "message": (
-                    "No monitoring checklist configured yet. "
-                    "Use the update action to add items you want monitored on a schedule."
-                ),
-            })
+            return ok_result(
+                {
+                    "status": "empty",
+                    "message": ("No monitoring checklist configured yet. Use the update action to add items you want monitored on a schedule."),
+                }
+            )
         content = monitors_path.read_text("utf-8")
         return ok_result({"status": "ok", "content": content})
 
@@ -112,11 +111,7 @@ class MonitorsTool(Tool):
         if ctx.bearer_token:
             scheduling_note = await self._sync_automation(ctx, has_items)
 
-        summary = (
-            f"Updated monitoring checklist ({item_count} item{'s' if item_count != 1 else ''})."
-            if has_items
-            else "Cleared monitoring checklist."
-        )
+        summary = f"Updated monitoring checklist ({item_count} item{'s' if item_count != 1 else ''})." if has_items else "Cleared monitoring checklist."
         if scheduling_note:
             summary = f"{summary} {scheduling_note}"
 

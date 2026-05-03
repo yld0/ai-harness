@@ -1,4 +1,4 @@
-""" Shared OpenRouter transport for council model calls. """
+"""Shared OpenRouter transport for council model calls."""
 
 from __future__ import annotations
 
@@ -21,7 +21,8 @@ DEFAULT_TIMEOUT = 120.0
 
 @dataclass(frozen=True)
 class CouncilModelResponse:
-    """ Normalised response from one council model. """
+    """Normalised response from one council model."""
+
     content: str
     reasoning_details: object | None = None
 
@@ -33,7 +34,7 @@ async def query_model(
     timeout: float = DEFAULT_TIMEOUT,
     task: TaskUpdateMessage | None = None,
 ) -> CouncilModelResponse | None:
-    """ Query one OpenRouter model and return normalised assistant content. 
+    """Query one OpenRouter model and return normalised assistant content.
     Args:
         model: OpenRouter model identifier
         messages: List of message dicts to send to the model
@@ -42,7 +43,7 @@ async def query_model(
     Returns:
         CouncilModelResponse or None if failed
     """
-    
+
     api_key = council_config.OPENROUTER_API_KEY
     api_url = council_config.OPENROUTER_API_URL
 
@@ -90,11 +91,15 @@ async def query_model(
 
 
 async def query_models_parallel(
-    models: Sequence[str], messages: list[dict[str, str]], *, task: TaskUpdateMessage | None = None, timeout: float = DEFAULT_TIMEOUT,
+    models: Sequence[str],
+    messages: list[dict[str, str]],
+    *,
+    task: TaskUpdateMessage | None = None,
+    timeout: float = DEFAULT_TIMEOUT,
 ) -> dict[str, CouncilModelResponse | None]:
     """
-    Query multiple OpenRouter models in parallel. 
-    
+    Query multiple OpenRouter models in parallel.
+
     Args:
         models: List of OpenRouter model identifiers
         messages: List of message dicts to send to each model
@@ -102,17 +107,17 @@ async def query_models_parallel(
         Dict mapping model identifier to response dict (or None if failed)
     """
     import asyncio
+
     tasks = [query_model(model, messages, task=task, timeout=timeout) for model in models]
     responses = await asyncio.gather(*tasks)
     return {model: response for model, response in zip(models, responses)}
 
 
 def response_texts(responses: Mapping[str, CouncilModelResponse | None]) -> dict[str, str | None]:
-    """ Extract content strings from model responses. 
+    """Extract content strings from model responses.
     Args:
         responses: Dict mapping model identifier to response dict (or None if failed)
     Returns:
         Dict mapping model identifier to content string (or None if failed)
     """
     return {model: response.content if response is not None else None for model, response in responses.items()}
-

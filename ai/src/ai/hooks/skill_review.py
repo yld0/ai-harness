@@ -17,6 +17,7 @@ import threading
 from typing import Any
 
 from ai.hooks.types import Hook, HookContext, HookResult
+from ai.skills.review_runner import ReviewRunner
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +61,6 @@ class SkillReviewHook:
     def _get_runner(self) -> Any:
         if self._runner is not None:
             return self._runner
-        from ai.skills.review_runner import ReviewRunner  # lazy import
-
         return ReviewRunner()
 
     def _effective_threshold(self, ctx: HookContext) -> int:
@@ -101,6 +100,7 @@ class SkillReviewHook:
             user_message=ctx.user_message,
             response_text=ctx.response_text,
             messages=ctx.messages,
+            skill_review_model=ctx.config.AI_SKILL_REVIEW_MODEL,
         )
         thread = threading.Thread(
             target=_run_in_new_loop,

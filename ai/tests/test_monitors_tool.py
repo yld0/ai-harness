@@ -125,7 +125,10 @@ class TestMonitorsToolScheduling:
     @patch("ai.tools.monitors.find_automation_by_route", new_callable=AsyncMock)
     @patch("ai.tools.monitors.AutomationsClient")
     def test_update_creates_automation_when_none_exists(
-        self, mock_client_cls: AsyncMock, mock_find: AsyncMock, tmp_path: Path,
+        self,
+        mock_client_cls: AsyncMock,
+        mock_find: AsyncMock,
+        tmp_path: Path,
     ) -> None:
         """Update with items creates a new automation if none exists."""
         mock_find.return_value = None
@@ -146,7 +149,10 @@ class TestMonitorsToolScheduling:
     @patch("ai.tools.monitors.find_automation_by_route", new_callable=AsyncMock)
     @patch("ai.tools.monitors.AutomationsClient")
     def test_update_resumes_paused_automation(
-        self, mock_client_cls: AsyncMock, mock_find: AsyncMock, tmp_path: Path,
+        self,
+        mock_client_cls: AsyncMock,
+        mock_find: AsyncMock,
+        tmp_path: Path,
     ) -> None:
         """Update with items resumes a paused automation."""
         mock_find.return_value = {"id": "a1", "status": "PAUSED", "route": MONITORS_ROUTE}
@@ -165,7 +171,10 @@ class TestMonitorsToolScheduling:
     @patch("ai.tools.monitors.find_automation_by_route", new_callable=AsyncMock)
     @patch("ai.tools.monitors.AutomationsClient")
     def test_update_pauses_automation_when_cleared(
-        self, mock_client_cls: AsyncMock, mock_find: AsyncMock, tmp_path: Path,
+        self,
+        mock_client_cls: AsyncMock,
+        mock_find: AsyncMock,
+        tmp_path: Path,
     ) -> None:
         """Update with no items pauses an active automation."""
         mock_find.return_value = {"id": "a1", "status": "ACTIVE", "route": MONITORS_ROUTE}

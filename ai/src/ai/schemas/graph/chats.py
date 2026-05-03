@@ -1,5 +1,5 @@
 """
-GraphQL input and output models for chats/interactions mutations.
+GraphQL pydantic input and output models for chats/interactions mutations.
 
 These models match the GraphQL schema exactly and are used for GraphQL mutations and responses.
 """

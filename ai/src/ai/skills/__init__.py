@@ -1,1 +1,1 @@
-""" Skill discovery, eligibility, and prompt index. """
+"""Skill discovery, eligibility, and prompt index."""

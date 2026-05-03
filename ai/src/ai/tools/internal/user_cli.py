@@ -30,7 +30,7 @@ _QUERY_GQL: dict[str, str] = {
 
 class UserCliTool(Tool):
     name: ClassVar[str] = "user_cli"
-    description: ClassVar[str] = "Call gateway GraphQL for alerts and watchlists. " "Use operation names: alerts_*, watchlists_* as listed in the schema."
+    description: ClassVar[str] = "Call gateway GraphQL for alerts and watchlists. Use operation names: alerts_*, watchlists_* as listed in the schema."
     required_permission: ClassVar[PermissionMode] = PermissionMode.WorkspaceWrite
     file_component_risk: ClassVar[bool] = False
 

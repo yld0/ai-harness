@@ -62,7 +62,7 @@ class MCPClient:
             from mcp import ClientSession  # type: ignore[import]
             from mcp.client.sse import sse_client  # type: ignore[import]
         except ImportError as exc:
-            raise ImportError("The 'mcp' extra is required for MCP integration. " "Install it with: uv add 'ai[mcp]'  (or: pip install 'ai[mcp]')") from exc
+            raise ImportError("The 'mcp' extra is required for MCP integration. Install it with: uv add 'ai[mcp]'  (or: pip install 'ai[mcp]')") from exc
 
         headers = _auth_headers(cfg)
         async with sse_client(cfg.url, headers=headers, timeout=cfg.timeout_s) as (
@@ -93,7 +93,7 @@ class MCPClient:
             from mcp import ClientSession  # type: ignore[import]
             from mcp.client.sse import sse_client  # type: ignore[import]
         except ImportError as exc:
-            raise ImportError("The 'mcp' extra is required for MCP integration. " "Install it with: uv add 'ai[mcp]'  (or: pip install 'ai[mcp]')") from exc
+            raise ImportError("The 'mcp' extra is required for MCP integration. Install it with: uv add 'ai[mcp]'  (or: pip install 'ai[mcp]')") from exc
 
         headers = _auth_headers(cfg)
         async with sse_client(cfg.url, headers=headers, timeout=cfg.timeout_s) as (

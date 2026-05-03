@@ -1,4 +1,4 @@
-""" PostHog product analytics — optional when ``POSTHOG_API_KEY`` is unset. """
+"""PostHog product analytics — optional when ``POSTHOG_API_KEY`` is unset."""
 
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class _PosthogClient(Protocol):
-    """ 
-    PostHog client protocol. 
+    """
+    PostHog client protocol.
 
     This is a minimal protocol to allow for mocking in tests.
 
@@ -24,6 +24,7 @@ class _PosthogClient(Protocol):
     - Safer Mocking: It allows you to safely inject a simple MagicMock() in your unit tests without mypy throwing a fit that "a mock is not a real PostHog class instance."
     - Zero Lock-in (Decoupling): Your code only depends on a generic "shape" (anything with a .capture method), so you can swap out PostHog for another analytics tool tomorrow without changing any type hints.
     """
+
     def capture(self, *, distinct_id: str, event: str, properties: object) -> None: ...
 
 
@@ -53,7 +54,7 @@ def init_posthog(telemetry_config: TelemetryConfig | None = None, *, factory: Ca
 
 
 def capture_event(distinct_id: str, event: str, properties: Mapping[str, object] | None = None) -> None:
-    """ Capture a product event; distinct id should be JWT ``sub``. """
+    """Capture a product event; distinct id should be JWT ``sub``."""
 
     if POSTHOG_CLIENT is None:
         logger.warning("PostHog client not initialized")
